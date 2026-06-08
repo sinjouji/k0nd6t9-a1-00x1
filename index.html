@@ -328,7 +328,8 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
     <span class="log-count" id="logCountLabel">0 件保存済み</span>
     <div class="toolbar-btns">
       <button class="toolbar-btn" onclick="triggerImport()">📥 インポート</button>
-      <button class="toolbar-btn" onclick="exportLogs()">📤 エクスポート</button>
+      <button class="toolbar-btn" onclick="exportLogs()">📤 HTMLエクスポート</button>
+      <button class="toolbar-btn" onclick="exportJson()">📤 JSONエクスポート</button>
       <button class="toolbar-btn danger" onclick="clearAllLogs()">🗑 全削除</button>
     </div>
   </div>
@@ -754,6 +755,19 @@ function clearAllLogs(){
   if(logs.length===0){showToast('ログは空です');return;}
   if(!confirm('全 '+logs.length+' 件のログを削除してよいですか？'))return;
   logs=[];persistLogs();renderLogs();showToast('全ログを削除しました');
+}
+
+/* ===== EXPORT JSON ===== */
+function exportJson() {
+  if (logs.length === 0) { showToast('エクスポートするログがありません'); return; }
+  var blob = new Blob([JSON.stringify(logs, null, 2)], { type: 'application/json;charset=utf-8' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url;
+  a.download = '献立ログ_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(logs.length + '件をJSONエクスポートしました', 'success');
 }
 
 /* ===== EXPORT ===== */
