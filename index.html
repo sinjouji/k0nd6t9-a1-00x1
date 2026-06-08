@@ -155,7 +155,7 @@ textarea{resize:none}
 .log-del:hover{color:var(--acc)}
 
 /* TOAST */
-.toast{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(90px);background:var(--br1);color:#fff9f2;padding:11px 22px;border-radius:28px;font-size:14px;font-weight:500;z-index:9000;white-space:nowrap;max-width:88vw;text-align:center;box-shadow:0 4px 20px rgba(44,26,14,.25);transition:transform .32s cubic-bezier(.4,0,.2,1);pointer-events:none;overflow:hidden;text-overflow:ellipsis}
+.toast{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(120px);background:var(--br1);color:#fff9f2;padding:13px 22px;border-radius:16px;font-size:14px;font-weight:500;z-index:9000;white-space:pre-wrap;word-break:break-all;max-width:92vw;text-align:center;box-shadow:0 4px 20px rgba(44,26,14,.25);transition:transform .32s cubic-bezier(.4,0,.2,1);pointer-events:none;line-height:1.6}
 .toast.visible{transform:translateX(-50%) translateY(0)}
 .toast.error{background:var(--acc)}
 .toast.success{background:var(--grn)}
@@ -381,8 +381,8 @@ function saveSettings() {
   if (provider === 'anthropic' && !v.startsWith('sk-')) {
     showToast('AnthropicキーはSK-から始まります', 'error'); return;
   }
-  if (provider === 'gemini' && !v.startsWith('AIza')) {
-    showToast('GeminiキーはAIzaから始まります', 'error'); return;
+  if (provider === 'gemini' && v.length < 20) {
+    showToast('GeminiキーはAI Studioで発行したものを貼り付けてください', 'error'); return;
   }
 
   keys[provider] = v;
@@ -512,17 +512,16 @@ async function callGemini(prompt) {
       generationConfig: { maxOutputTokens: 2400, temperature: 0.7 }
     })
   });
+  var data = await res.json().catch(function(){return{};});
   if (!res.ok) {
-    var err = await res.json().catch(function(){return{};});
-    var msg = (err&&err.error&&err.error.message)||'';
-    if (res.status===400) throw new Error('GeminiキーまたはリクエストエラーError ('+res.status+'): '+msg);
-    if (res.status===403) throw new Error('Gemini APIキーが無効です。⚙️ から再設定してください。');
-    if (res.status===429) throw new Error('Geminiのレート制限に達しました。しばらくしてから再試行してください。');
-    throw new Error('Gemini APIエラー ('+res.status+')'+(msg?': '+msg:''));
+    var msg = (data&&data.error&&data.error.message)||JSON.stringify(data);
+    if (res.status===400) throw new Error('Gemini 400エラー: '+msg);
+    if (res.status===403) throw new Error('Gemini 403エラー（キー無効の可能性）: '+msg);
+    if (res.status===429) throw new Error('Gemini 429エラー（レート制限）: '+msg);
+    throw new Error('Gemini APIエラー ('+res.status+'): '+msg);
   }
-  var data = await res.json();
   var cands = data.candidates;
-  if (!cands||!cands[0]) throw new Error('Geminiから応答が得られませんでした。');
+  if (!cands||!cands[0]) throw new Error('Geminiから応答なし。レスポンス: '+JSON.stringify(data).slice(0,200));
   return cands[0].content.parts.map(function(p){return p.text||'';}).join('');
 }
 
@@ -713,7 +712,7 @@ function showToast(msg,type){
   var el=document.getElementById('toast');
   el.textContent=msg;el.className='toast'+(type?' '+type:'');
   el.classList.add('visible');clearTimeout(toastTimer);
-  toastTimer=setTimeout(function(){el.classList.remove('visible');},3200);
+  toastTimer=setTimeout(function(){el.classList.remove('visible');}, type==='error' ? 8000 : 3200);
 }
 
 /* ===== UTIL ===== */
