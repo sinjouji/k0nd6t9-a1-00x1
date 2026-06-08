@@ -143,6 +143,14 @@ textarea{resize:none}
 .toolbar-btn:hover{background:var(--cream)}
 .toolbar-btn.danger{color:var(--acc);border-color:var(--accl)}
 .toolbar-btn.danger:hover{background:#fdf0ed}
+.search-bar{display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--card);border-bottom:1.5px solid var(--border)}
+.search-wrap{flex:1;position:relative}
+.search-input{width:100%;padding:9px 36px 9px 13px;border:1.5px solid var(--border);border-radius:22px;background:#fff;color:var(--txt);font-size:15px;outline:none;transition:border-color .2s;font-family:var(--sans)}
+.search-input:focus{border-color:var(--br4)}
+.search-clear{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--br5);font-size:17px;line-height:1;padding:2px;cursor:pointer;display:none}
+.search-clear.show{display:block}
+.search-hit{font-size:12px;color:var(--txl);white-space:nowrap;flex-shrink:0}
+mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
 .log-list{padding:14px 16px}
 .log-empty{text-align:center;padding:52px 20px;color:var(--txl)}
 .log-empty .eico{font-size:42px;margin-bottom:12px}
@@ -153,6 +161,7 @@ textarea{resize:none}
 .log-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--txl)}
 .log-del{flex-shrink:0;background:none;border:none;font-size:19px;color:var(--br5);padding:3px 5px;border-radius:5px;transition:color .2s;line-height:1}
 .log-del:hover{color:var(--acc)}
+.log-preview{font-size:12px;color:var(--txl);margin-top:5px;line-height:1.6}
 
 /* TOAST */
 .toast{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(120px);background:var(--br1);color:#fff9f2;padding:13px 22px;border-radius:16px;font-size:14px;font-weight:500;z-index:9000;white-space:pre-wrap;word-break:break-all;max-width:92vw;text-align:center;box-shadow:0 4px 20px rgba(44,26,14,.25);transition:transform .32s cubic-bezier(.4,0,.2,1);pointer-events:none;line-height:1.6}
@@ -322,6 +331,13 @@ textarea{resize:none}
       <button class="toolbar-btn" onclick="exportLogs()">📤 エクスポート</button>
       <button class="toolbar-btn danger" onclick="clearAllLogs()">🗑 全削除</button>
     </div>
+  </div>
+  <div class="search-bar">
+    <div class="search-wrap">
+      <input type="search" class="search-input" id="logSearch" placeholder="🔍 料理名・材料・作り方で検索" oninput="onSearch()" autocomplete="off" spellcheck="false">
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+    <span class="search-hit hidden" id="searchHit"></span>
   </div>
   <div class="log-list" id="logList"></div>
   <div class="bottom-space"></div>
@@ -630,30 +646,102 @@ function updateBadge(){
   document.getElementById('logBadge').textContent=logs.length;
   document.getElementById('logCountLabel').textContent=logs.length+' 件保存済み';
 }
-function renderLogs(){
+
+/* ===== SEARCH ===== */
+var searchQuery = '';
+function onSearch() {
+  var input = document.getElementById('logSearch');
+  searchQuery = input.value.trim();
+  document.getElementById('searchClear').classList.toggle('show', searchQuery.length > 0);
+  renderLogs();
+}
+function clearSearch() {
+  document.getElementById('logSearch').value = '';
+  searchQuery = '';
+  document.getElementById('searchClear').classList.remove('show');
+  document.getElementById('searchHit').textContent = '';
+  renderLogs();
+}
+
+function highlight(str, query) {
+  if (!query || !str) return esc(str);
+  var escaped = esc(str);
+  var escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return escaped.replace(new RegExp('('+escapedQuery+')', 'gi'), '<mark>$1</mark>');
+}
+
+function matchesSearch(entry, q) {
+  if (!q) return true;
+  var lower = q.toLowerCase();
+  if ((entry.name||'').toLowerCase().includes(lower)) return true;
+  if ((entry.category||'').toLowerCase().includes(lower)) return true;
+  if ((entry.description||'').toLowerCase().includes(lower)) return true;
+  if ((entry.cookTime||'').toLowerCase().includes(lower)) return true;
+  if (entry.ingredients && entry.ingredients.some(function(x){ return x.toLowerCase().includes(lower); })) return true;
+  if (entry.steps && entry.steps.some(function(x){ return x.toLowerCase().includes(lower); })) return true;
+  return false;
+}
+
+function renderLogs() {
   updateBadge();
-  var list=document.getElementById('logList');
-  if(logs.length===0){
-    list.innerHTML='<div class="log-empty"><div class="eico">📋</div><p>まだ保存した献立はありません。<br>提案画面から「ログに保存」してください。</p></div>';
+  var list = document.getElementById('logList');
+  var q = searchQuery;
+  var filtered = logs.filter(function(e){ return matchesSearch(e, q); });
+
+  var hitEl = document.getElementById('searchHit');
+  if (q) {
+    hitEl.textContent = filtered.length + '件ヒット';
+    hitEl.className = 'search-hit';
+  } else {
+    hitEl.textContent = '';
+  }
+
+  if (logs.length === 0) {
+    list.innerHTML = '<div class="log-empty"><div class="eico">📋</div><p>まだ保存した献立はありません。<br>提案画面から「ログに保存」してください。</p></div>';
     return;
   }
-  list.innerHTML='';
-  logs.forEach(function(entry,i){
-    var d=new Date(entry.savedAt);
-    var ds=d.getFullYear()+'/'+(String(d.getMonth()+1).padStart(2,'0'))+'/'+String(d.getDate()).padStart(2,'0');
-    var item=document.createElement('div');
-    item.className='log-item';
-    item.innerHTML=
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="log-empty"><div class="eico">🔍</div><p>「'+esc(q)+'」に一致する献立が<br>見つかりませんでした。</p></div>';
+    return;
+  }
+
+  list.innerHTML = '';
+  filtered.forEach(function(entry, fi) {
+    var realIdx = logs.indexOf(entry);
+    var d = new Date(entry.savedAt);
+    var ds = d.getFullYear()+'/'+(String(d.getMonth()+1).padStart(2,'0'))+'/'+String(d.getDate()).padStart(2,'0');
+
+    // ヒットした材料・手順を最大2件だけプレビュー表示
+    var matchedIngr = [];
+    var matchedSteps = [];
+    if (q) {
+      var lower = q.toLowerCase();
+      matchedIngr = (entry.ingredients||[]).filter(function(x){ return x.toLowerCase().includes(lower); });
+      matchedSteps = (entry.steps||[]).filter(function(x){ return x.toLowerCase().includes(lower); });
+    }
+
+    var item = document.createElement('div');
+    item.className = 'log-item';
+    var previewHtml = '';
+    if (matchedIngr.length > 0) {
+      previewHtml += '<div class="log-preview">🥕 '+matchedIngr.slice(0,3).map(function(x){ return highlight(x,q); }).join('、')+'</div>';
+    }
+    if (matchedSteps.length > 0) {
+      previewHtml += '<div class="log-preview">📝 '+highlight(matchedSteps[0].slice(0,40)+(matchedSteps[0].length>40?'…':''), q)+'</div>';
+    }
+
+    item.innerHTML =
       '<div class="log-info">'
-        +'<div class="log-name">'+esc(entry.name)+'</div>'
+        +'<div class="log-name">'+highlight(entry.name, q)+'</div>'
         +'<div class="log-meta">'
           +(entry.category?'<span>'+esc(entry.category)+'</span>':'')
           +(entry.calories?'<span>🔥 '+entry.calories+'kcal</span>':'')
           +(entry.cookTime?'<span>⏱ '+esc(entry.cookTime)+'</span>':'')
           +'<span>📅 '+ds+'</span>'
         +'</div>'
+        +previewHtml
       +'</div>'
-      +'<button class="log-del" onclick="deleteLog('+i+')" title="削除">✕</button>';
+      +'<button class="log-del" onclick="deleteLog('+realIdx+')" title="削除">✕</button>';
     list.appendChild(item);
   });
 }
