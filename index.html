@@ -11,27 +11,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:       #faf6f0;
-  --card:     #fff9f2;
-  --border:   #e0cdb4;
-  --br1:  #2c1a0e;
-  --br2:  #5c3d2e;
-  --br3:  #8b5e3c;
-  --br4:  #b07d54;
-  --br5:  #d4a97a;
-  --br6:  #e8d5b7;
-  --cream:#f5ede0;
-  --acc:  #b5451b;
-  --accl: #e07a5f;
-  --grn:  #4a7a55;
-  --txt:  #2c1a0e;
-  --txm:  #6b4535;
-  --txl:  #9e7055;
-  --shd:  rgba(44,26,14,0.10);
-  --r:    14px;
-  --rs:   8px;
-  --serif:'Noto Serif JP',serif;
-  --sans: 'Noto Sans JP',sans-serif;
+  --bg:#faf6f0;--card:#fff9f2;--border:#e0cdb4;
+  --br1:#2c1a0e;--br2:#5c3d2e;--br3:#8b5e3c;--br4:#b07d54;--br5:#d4a97a;--br6:#e8d5b7;
+  --cream:#f5ede0;--acc:#b5451b;--accl:#e07a5f;--grn:#4a7a55;
+  --txt:#2c1a0e;--txm:#6b4535;--txl:#9e7055;--shd:rgba(44,26,14,0.10);
+  --r:14px;--rs:8px;
+  --serif:'Noto Serif JP',serif;--sans:'Noto Sans JP',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:var(--sans);font-size:16px;line-height:1.6;background:var(--bg);color:var(--txt);min-height:100svh;overflow-x:hidden}
@@ -42,16 +27,30 @@ textarea{resize:none}
 /* MODAL */
 .modal-overlay{position:fixed;inset:0;z-index:9999;background:rgba(44,26,14,.65);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);animation:fadeIn .2s ease}
 .modal-overlay.hidden{display:none}
-.modal-box{background:var(--card);border-radius:var(--r);padding:30px 24px;width:100%;max-width:420px;box-shadow:0 12px 40px rgba(44,26,14,.3);animation:slideUp .25s ease}
+.modal-box{background:var(--card);border-radius:var(--r);padding:28px 24px;width:100%;max-width:440px;box-shadow:0 12px 40px rgba(44,26,14,.3);animation:slideUp .25s ease}
 .modal-box h2{font-family:var(--serif);font-size:19px;color:var(--br2);margin-bottom:10px}
-.modal-box p{font-size:13px;color:var(--txl);line-height:1.75;margin-bottom:20px}
-.modal-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--txt);font-family:monospace;font-size:15px;letter-spacing:.03em;outline:none;margin-bottom:14px;transition:border-color .2s}
+.modal-box p{font-size:13px;color:var(--txl);line-height:1.75;margin-bottom:16px}
+.modal-input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--txt);font-family:monospace;font-size:15px;letter-spacing:.03em;outline:none;margin-bottom:10px;transition:border-color .2s}
 .modal-input:focus{border-color:var(--br4)}
+
+/* Provider selector in modal */
+.provider-tabs{display:flex;gap:0;border:1.5px solid var(--border);border-radius:var(--rs);overflow:hidden;margin-bottom:18px}
+.provider-tab{flex:1;padding:10px 8px;font-size:14px;font-weight:500;background:#fff;border:none;color:var(--txl);transition:all .18s;display:flex;align-items:center;justify-content:center;gap:5px}
+.provider-tab.active{background:var(--cream);color:var(--br2)}
+.provider-tab:first-child{border-right:1.5px solid var(--border)}
+.provider-hint{font-size:12px;color:var(--txl);margin-bottom:14px;line-height:1.7;padding:10px 12px;background:var(--cream);border-radius:var(--rs)}
+.provider-hint a{color:var(--br3);text-decoration:none}
+.modal-section-label{font-size:12px;font-weight:700;color:var(--txl);letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+.modal-divider{height:1px;background:var(--border);margin:16px 0}
 
 /* HEADER */
 .app-header{background:var(--br2);color:#fff9f2;padding:0 18px;padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top));display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(44,26,14,.18)}
-.header-title{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;line-height:1;display:flex;align-items:baseline;gap:7px}
-.header-title small{font-size:11px;font-weight:400;opacity:.6;letter-spacing:.06em}
+.header-left{display:flex;align-items:baseline;gap:8px}
+.header-title{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;line-height:1}
+.provider-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;letter-spacing:.04em;line-height:1.4}
+.provider-badge.anthropic{background:rgba(255,249,242,.18);color:rgba(255,249,242,.85)}
+.provider-badge.gemini{background:rgba(100,180,255,.22);color:rgba(200,235,255,.95)}
+.provider-badge.none{background:rgba(255,249,242,.1);color:rgba(255,249,242,.45)}
 .icon-btn{background:none;border:none;color:rgba(255,249,242,.75);font-size:20px;padding:4px 7px;border-radius:6px;transition:all .15s;line-height:1}
 .icon-btn:hover{color:#fff9f2;background:rgba(255,249,242,.12)}
 
@@ -63,8 +62,7 @@ textarea{resize:none}
 .tab-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--br5);color:var(--br1);font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:10px;padding:0 4px;margin-left:5px;vertical-align:middle}
 
 /* PAGE */
-.page{display:none}
-.page.active{display:block}
+.page{display:none}.page.active{display:block}
 
 /* INPUT PANEL */
 .input-panel{background:var(--card);border-bottom:1.5px solid var(--border)}
@@ -75,34 +73,25 @@ textarea{resize:none}
 .toggle-icon.open{transform:rotate(180deg)}
 .input-form{padding:4px 18px 20px;display:none}
 .input-form.open{display:block}
-
 .form-group{margin-bottom:18px}
 .form-label{display:block;font-size:12px;font-weight:700;color:var(--txl);letter-spacing:.06em;text-transform:uppercase;margin-bottom:9px}
-
-/* Pills */
 .pill-group{display:flex;flex-wrap:wrap;gap:7px}
 .pill-item{position:relative}
 .pill-item input[type=radio]{position:absolute;opacity:0;width:0}
 .pill-item label{display:inline-flex;align-items:center;padding:7px 14px;border-radius:22px;border:1.5px solid var(--border);background:#fff;color:var(--txm);font-size:14px;cursor:pointer;transition:all .18s;user-select:none}
 .pill-item input:checked+label{border-color:var(--br3);background:var(--cream);color:var(--br2);font-weight:500}
-
-/* Auto calc */
 .auto-fields{display:none;flex-wrap:wrap;gap:8px;margin-top:11px}
 .auto-fields.show{display:flex}
 .auto-fields input,.auto-fields select{flex:1;min-width:90px;padding:9px 11px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--txt);outline:none;transition:border-color .2s}
 .auto-fields input:focus,.auto-fields select:focus{border-color:var(--br4)}
 .cal-result{width:100%;font-size:13px;color:var(--grn);font-weight:500;padding:2px 0}
-
-/* Manual cal */
 .cal-manual-row{display:flex;align-items:center;gap:9px;margin-top:10px}
 .cal-manual-row input{flex:1;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--txt);outline:none;font-family:var(--sans);transition:border-color .2s}
 .cal-manual-row input:focus{border-color:var(--br4)}
 .cal-manual-row span{font-size:13px;color:var(--txl);white-space:nowrap}
-
 .text-input,.textarea-input{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:var(--rs);background:#fff;color:var(--txt);outline:none;transition:border-color .2s}
 .text-input:focus,.textarea-input:focus{border-color:var(--br4)}
 .textarea-input{line-height:1.6}
-
 .suggest-btn{width:100%;padding:15px;background:var(--br2);color:#fff9f2;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;letter-spacing:.04em;transition:all .2s;margin-top:6px}
 .suggest-btn:active{transform:scale(.98);background:var(--br3)}
 .suggest-btn:disabled{opacity:.5;transform:none;cursor:not-allowed}
@@ -120,10 +109,8 @@ textarea{resize:none}
 
 /* MEAL CARD */
 .meal-card{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);margin-bottom:12px;overflow:hidden;box-shadow:0 2px 10px var(--shd);animation:slideUp .3s ease both}
-.meal-card:nth-child(1){animation-delay:.00s}
-.meal-card:nth-child(2){animation-delay:.06s}
-.meal-card:nth-child(3){animation-delay:.12s}
-.meal-card:nth-child(4){animation-delay:.18s}
+.meal-card:nth-child(1){animation-delay:.00s}.meal-card:nth-child(2){animation-delay:.06s}
+.meal-card:nth-child(3){animation-delay:.12s}.meal-card:nth-child(4){animation-delay:.18s}
 .meal-card:nth-child(5){animation-delay:.24s}
 .meal-head{display:flex;align-items:center;padding:14px 16px;cursor:pointer;gap:10px;transition:background .15s}
 .meal-head:active{background:var(--cream)}
@@ -173,13 +160,11 @@ textarea{resize:none}
 .toast.error{background:var(--acc)}
 .toast.success{background:var(--grn)}
 
-/* BTN */
-.btn-primary{display:inline-flex;align-items:center;justify-content:center;padding:11px 22px;background:var(--br2);color:#fff9f2;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;transition:background .2s}
+.btn-primary{display:inline-flex;align-items:center;justify-content:center;padding:11px 22px;background:var(--br2);color:#fff9f2;border:none;border-radius:var(--rs);font-size:15px;font-weight:700;transition:background .2s;width:100%}
 .btn-primary:hover{background:var(--br3)}
 
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-
 .bottom-space{height:calc(24px + env(safe-area-inset-bottom))}
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -188,29 +173,62 @@ textarea{resize:none}
 </head>
 <body>
 
-<!-- API MODAL -->
+<!-- ===== 設定モーダル ===== -->
 <div class="modal-overlay hidden" id="apiModal">
   <div class="modal-box">
-    <h2>🔑 APIキーの設定</h2>
-    <p>Claude APIキーを入力してください。<br>キーはこのデバイスのみに保存され、外部には一切送信されません。Anthropic Console で取得できます。</p>
-    <input type="password" class="modal-input" id="apiKeyInput" placeholder="sk-ant-api..." autocomplete="off" spellcheck="false">
-    <button class="btn-primary" style="width:100%" onclick="saveApiKey()">保存して始める</button>
+    <h2>⚙️ API設定</h2>
+
+    <!-- プロバイダー切替タブ -->
+    <div class="modal-section-label">使用するAI</div>
+    <div class="provider-tabs">
+      <button class="provider-tab active" id="ptab-anthropic" onclick="selectProvider('anthropic')">
+        🟤 Claude (Anthropic)
+      </button>
+      <button class="provider-tab" id="ptab-gemini" onclick="selectProvider('gemini')">
+        🔵 Gemini (Google)
+      </button>
+    </div>
+
+    <!-- Anthropic パネル -->
+    <div id="panel-anthropic">
+      <div class="provider-hint">
+        <b>APIキーの取得：</b><a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> → API Keys → Create Key<br>
+        新規登録時に約$5の無料クレジットがもらえる場合があります。
+      </div>
+      <div class="modal-section-label">Anthropic APIキー</div>
+      <input type="password" class="modal-input" id="keyInputAnthropic" placeholder="sk-ant-api..." autocomplete="off" spellcheck="false">
+    </div>
+
+    <!-- Gemini パネル -->
+    <div id="panel-gemini" style="display:none">
+      <div class="provider-hint">
+        <b>APIキーの取得：</b><a href="https://aistudio.google.com/apikey" target="_blank">aistudio.google.com/apikey</a> → Create API key<br>
+        無料枠が大きく、個人利用ならほぼ無料で使えます。
+      </div>
+      <div class="modal-section-label">Gemini APIキー</div>
+      <input type="password" class="modal-input" id="keyInputGemini" placeholder="AIza..." autocomplete="off" spellcheck="false">
+    </div>
+
+    <button class="btn-primary" onclick="saveSettings()">保存して始める</button>
   </div>
 </div>
 
-<!-- HEADER -->
+<!-- ===== HEADER ===== -->
 <header class="app-header">
-  <div class="header-title">🍱 今日の献立<small>AI献立提案</small></div>
-  <button class="icon-btn" onclick="openSettings()" title="APIキー設定">⚙️</button>
+  <div class="header-left">
+    <div class="header-title">🍱 今日の献立</div>
+    <span class="provider-badge none" id="providerBadge">未設定</span>
+  </div>
+  <button class="icon-btn" onclick="openSettings()" title="API設定">⚙️</button>
 </header>
 
-<!-- TABS -->
+<!-- ===== TABS ===== -->
 <nav class="tab-nav">
   <button class="tab-btn active" id="tab-suggest" onclick="switchTab('suggest')">🍽 提案</button>
   <button class="tab-btn" id="tab-log" onclick="switchTab('log')">📋 ログ <span class="tab-badge" id="logBadge">0</span></button>
 </nav>
 
-<!-- SUGGEST PAGE -->
+<!-- ===== 提案画面 ===== -->
 <div class="page active" id="page-suggest">
   <div class="input-panel">
     <div class="input-toggle" onclick="toggleForm()">
@@ -289,7 +307,7 @@ textarea{resize:none}
   <div class="bottom-space"></div>
 </div>
 
-<!-- LOG PAGE -->
+<!-- ===== ログ画面 ===== -->
 <div class="page" id="page-log">
   <div class="log-toolbar">
     <span class="log-count" id="logCountLabel">0 件保存済み</span>
@@ -307,65 +325,116 @@ textarea{resize:none}
 <div class="toast" id="toast"></div>
 
 <script>
-var apiKey='', logs=[], currentMeals=[], formOpen=false;
+/* ===== STATE ===== */
+var provider = 'anthropic'; // 'anthropic' | 'gemini'
+var keys = { anthropic: '', gemini: '' };
+var logs = [], currentMeals = [], formOpen = false;
 
-function init(){
-  apiKey=localStorage.getItem('menuAppKey')||'';
-  logs=JSON.parse(localStorage.getItem('menuAppLogs')||'[]');
-  if(!apiKey) showApiModal();
+/* ===== INIT ===== */
+function init() {
+  provider = localStorage.getItem('menuProvider') || 'anthropic';
+  keys.anthropic = localStorage.getItem('menuKeyAnthropic') || '';
+  keys.gemini    = localStorage.getItem('menuKeyGemini')    || '';
+  logs = JSON.parse(localStorage.getItem('menuAppLogs') || '[]');
+
+  updateProviderBadge();
   updateBadge();
   renderLogs();
   toggleForm(true);
+
+  if (!keys[provider]) showApiModal();
+
   ['weight','height','activity'].forEach(function(id){
-    document.getElementById(id).addEventListener('input',calcTDEE);
+    document.getElementById(id).addEventListener('input', calcTDEE);
   });
 }
 
-function showApiModal(){
+/* ===== MODAL ===== */
+function showApiModal() {
   document.getElementById('apiModal').classList.remove('hidden');
-  document.getElementById('apiKeyInput').value=apiKey;
-  setTimeout(function(){document.getElementById('apiKeyInput').focus();},100);
+  // プロバイダータブを現在の状態に合わせる
+  selectProvider(provider, true);
 }
-function openSettings(){showApiModal();}
+function openSettings() { showApiModal(); }
 
-function saveApiKey(){
-  var v=document.getElementById('apiKeyInput').value.trim();
-  if(!v){showToast('APIキーを入力してください','error');return;}
-  if(!v.startsWith('sk-')){showToast('APIキーの形式が正しくないようです','error');return;}
-  apiKey=v;
-  localStorage.setItem('menuAppKey',v);
+function selectProvider(p, silent) {
+  provider = p;
+  // タブの見た目を切替
+  document.getElementById('ptab-anthropic').classList.toggle('active', p === 'anthropic');
+  document.getElementById('ptab-gemini').classList.toggle('active', p === 'gemini');
+  document.getElementById('panel-anthropic').style.display = p === 'anthropic' ? '' : 'none';
+  document.getElementById('panel-gemini').style.display    = p === 'gemini'    ? '' : 'none';
+  // 既存キーを入力欄に反映
+  document.getElementById('keyInputAnthropic').value = keys.anthropic;
+  document.getElementById('keyInputGemini').value    = keys.gemini;
+  if (!silent) localStorage.setItem('menuProvider', p);
+}
+
+function saveSettings() {
+  var inputEl = provider === 'anthropic'
+    ? document.getElementById('keyInputAnthropic')
+    : document.getElementById('keyInputGemini');
+  var v = inputEl.value.trim();
+
+  if (!v) { showToast('APIキーを入力してください', 'error'); return; }
+
+  if (provider === 'anthropic' && !v.startsWith('sk-')) {
+    showToast('AnthropicキーはSK-から始まります', 'error'); return;
+  }
+  if (provider === 'gemini' && !v.startsWith('AIza')) {
+    showToast('GeminiキーはAIzaから始まります', 'error'); return;
+  }
+
+  keys[provider] = v;
+  localStorage.setItem('menuProvider', provider);
+  localStorage.setItem('menuKeyAnthropic', keys.anthropic);
+  localStorage.setItem('menuKeyGemini',    keys.gemini);
+
   document.getElementById('apiModal').classList.add('hidden');
-  showToast('APIキーを保存しました','success');
+  updateProviderBadge();
+  showToast('設定を保存しました', 'success');
 }
-document.getElementById('apiModal').addEventListener('click',function(e){
-  if(e.target===this&&apiKey)this.classList.add('hidden');
-});
-document.getElementById('apiKeyInput').addEventListener('keydown',function(e){
-  if(e.key==='Enter')saveApiKey();
+
+document.getElementById('apiModal').addEventListener('click', function(e){
+  if (e.target === this && keys[provider]) this.classList.add('hidden');
 });
 
-function switchTab(tab){
+/* ===== PROVIDER BADGE ===== */
+function updateProviderBadge() {
+  var badge = document.getElementById('providerBadge');
+  if (provider === 'anthropic' && keys.anthropic) {
+    badge.textContent = 'Claude'; badge.className = 'provider-badge anthropic';
+  } else if (provider === 'gemini' && keys.gemini) {
+    badge.textContent = 'Gemini'; badge.className = 'provider-badge gemini';
+  } else {
+    badge.textContent = '未設定'; badge.className = 'provider-badge none';
+  }
+}
+
+/* ===== TABS ===== */
+function switchTab(tab) {
   ['suggest','log'].forEach(function(t){
-    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
-    document.getElementById('page-'+t).classList.toggle('active',t===tab);
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('page-'+t).classList.toggle('active', t===tab);
   });
-  if(tab==='log')renderLogs();
+  if (tab === 'log') renderLogs();
 }
 
-function toggleForm(force){
-  formOpen=(force!==undefined)?force:!formOpen;
-  document.getElementById('inputForm').classList.toggle('open',formOpen);
-  document.getElementById('toggleIcon').classList.toggle('open',formOpen);
+/* ===== FORM TOGGLE ===== */
+function toggleForm(force) {
+  formOpen = (force !== undefined) ? force : !formOpen;
+  document.getElementById('inputForm').classList.toggle('open', formOpen);
+  document.getElementById('toggleIcon').classList.toggle('open', formOpen);
 }
 
-function onCalModeChange(){
-  var isAuto=document.querySelector('input[name="calMode"]:checked').value==='auto';
-  document.getElementById('calManualArea').style.display=isAuto?'none':'block';
-  document.getElementById('calAutoArea').classList.toggle('show',isAuto);
-  if(isAuto)calcTDEE();
+/* ===== CALORIE ===== */
+function onCalModeChange() {
+  var isAuto = document.querySelector('input[name="calMode"]:checked').value === 'auto';
+  document.getElementById('calManualArea').style.display = isAuto ? 'none' : 'block';
+  document.getElementById('calAutoArea').classList.toggle('show', isAuto);
+  if (isAuto) calcTDEE();
 }
-
-function calcTDEE(){
+function calcTDEE() {
   var w=parseFloat(document.getElementById('weight').value);
   var h=parseFloat(document.getElementById('height').value);
   var a=parseFloat(document.getElementById('activity').value);
@@ -375,13 +444,9 @@ function calcTDEE(){
     var tdee=Math.round(bmr*a);
     el.textContent='推定消費カロリー：約 '+tdee.toLocaleString()+' kcal / 日';
     el.dataset.tdee=tdee;
-  }else{
-    el.textContent='';
-    delete el.dataset.tdee;
-  }
+  }else{el.textContent='';delete el.dataset.tdee;}
 }
-
-function getCalorieInfo(){
+function getCalorieInfo() {
   var mode=document.querySelector('input[name="calMode"]:checked').value;
   if(mode==='manual'){
     var v=document.getElementById('manualCal').value;
@@ -392,54 +457,117 @@ function getCalorieInfo(){
   }
 }
 
-async function getSuggestion(){
-  if(!apiKey){showApiModal();return;}
-  var btn=document.getElementById('suggestBtn');
-  btn.disabled=true;btn.textContent='⏳ 考え中...';
-  var calorie=getCalorieInfo();
-  var exclude=document.getElementById('exclude').value.trim();
-  var mood=document.getElementById('mood').value.trim();
-  var cookTime=document.querySelector('input[name="cookTime"]:checked').value;
-  var notes=document.getElementById('notes').value.trim();
-  var prompt='あなたはプロの栄養士です。以下の条件で本日の献立を3〜5品提案してください。\n\n【条件】\n- 目標カロリー: '+calorie+'\n'+(exclude?'- 除外・アレルギー: '+exclude+'\n':'')+(mood?'- 気分・希望: '+mood+'\n':'')+'- 調理時間: '+cookTime+'\n'+(notes?'- 備考: '+notes+'\n':'')+'\n必ず以下のJSON形式のみで出力してください（説明文・Markdownコードブロック不要）：\n{"meals":[{"name":"料理名","category":"朝食/昼食/夕食/おやつ","calories":数値,"cookTime":"XX分","description":"2〜3文の説明","ingredients":["材料1","材料2"],"steps":["手順1","手順2"]}]}';
-  document.getElementById('resultArea').innerHTML='<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">献立を考えています…</div></div>';
-  try{
-    var res=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-haiku-4-5-20251001',max_tokens:2400,messages:[{role:'user',content:prompt}]})
-    });
-    if(!res.ok){
-      var err=await res.json().catch(function(){return{};});
-      var msg=(err&&err.error&&err.error.message)||'';
-      if(res.status===401)throw new Error('APIキーが無効です。⚙️ から再設定してください。');
-      if(res.status===429||msg.includes('credit')||msg.includes('quota'))throw new Error('クレジット残量不足またはレート制限です。Anthropic Consoleを確認してください。');
-      throw new Error('APIエラー ('+res.status+')'+(msg?': '+msg:''));
-    }
-    var data=await res.json();
-    var rawText=data.content.filter(function(c){return c.type==='text';}).map(function(c){return c.text;}).join('');
-    var clean=rawText.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
-    var parsed=JSON.parse(clean);
-    currentMeals=parsed.meals||[];
-    if(currentMeals.length===0)throw new Error('提案が取得できませんでした。もう一度お試しください。');
+/* ===== BUILD PROMPT ===== */
+function buildPrompt() {
+  var calorie  = getCalorieInfo();
+  var exclude  = document.getElementById('exclude').value.trim();
+  var mood     = document.getElementById('mood').value.trim();
+  var cookTime = document.querySelector('input[name="cookTime"]:checked').value;
+  var notes    = document.getElementById('notes').value.trim();
+  return 'あなたはプロの栄養士です。以下の条件で本日の献立を3〜5品提案してください。\n\n【条件】\n- 目標カロリー: '+calorie+'\n'
+    +(exclude?'- 除外・アレルギー: '+exclude+'\n':'')
+    +(mood?'- 気分・希望: '+mood+'\n':'')
+    +'- 調理時間: '+cookTime+'\n'
+    +(notes?'- 備考: '+notes+'\n':'')
+    +'\n必ず以下のJSON形式のみで出力してください（説明文・Markdownコードブロック不要）：\n{"meals":[{"name":"料理名","category":"朝食/昼食/夕食/おやつ","calories":数値,"cookTime":"XX分","description":"2〜3文の説明","ingredients":["材料1","材料2"],"steps":["手順1","手順2"]}]}';
+}
+
+/* ===== API CALL: ANTHROPIC ===== */
+async function callAnthropic(prompt) {
+  var res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': keys.anthropic,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2400,
+      messages: [{ role: 'user', content: prompt }]
+    })
+  });
+  if (!res.ok) {
+    var err = await res.json().catch(function(){return{};});
+    var msg = (err&&err.error&&err.error.message)||'';
+    if (res.status===401) throw new Error('APIキーが無効です。⚙️ から再設定してください。');
+    if (res.status===429||msg.includes('credit')||msg.includes('quota'))
+      throw new Error('クレジット残量不足またはレート制限です。');
+    throw new Error('Anthropic APIエラー ('+res.status+')'+(msg?': '+msg:''));
+  }
+  var data = await res.json();
+  return data.content.filter(function(c){return c.type==='text';}).map(function(c){return c.text;}).join('');
+}
+
+/* ===== API CALL: GEMINI ===== */
+async function callGemini(prompt) {
+  var model = 'gemini-2.0-flash';
+  var url = 'https://generativelanguage.googleapis.com/v1beta/models/'+model+':generateContent?key='+keys.gemini;
+  var res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { maxOutputTokens: 2400, temperature: 0.7 }
+    })
+  });
+  if (!res.ok) {
+    var err = await res.json().catch(function(){return{};});
+    var msg = (err&&err.error&&err.error.message)||'';
+    if (res.status===400) throw new Error('GeminiキーまたはリクエストエラーError ('+res.status+'): '+msg);
+    if (res.status===403) throw new Error('Gemini APIキーが無効です。⚙️ から再設定してください。');
+    if (res.status===429) throw new Error('Geminiのレート制限に達しました。しばらくしてから再試行してください。');
+    throw new Error('Gemini APIエラー ('+res.status+')'+(msg?': '+msg:''));
+  }
+  var data = await res.json();
+  var cands = data.candidates;
+  if (!cands||!cands[0]) throw new Error('Geminiから応答が得られませんでした。');
+  return cands[0].content.parts.map(function(p){return p.text||'';}).join('');
+}
+
+/* ===== GET SUGGESTION ===== */
+async function getSuggestion() {
+  var currentKey = keys[provider];
+  if (!currentKey) { showApiModal(); return; }
+
+  var btn = document.getElementById('suggestBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 考え中...';
+
+  var prompt = buildPrompt();
+  document.getElementById('resultArea').innerHTML =
+    '<div class="loading-wrap"><div class="spinner"></div><div class="loading-text">献立を考えています…</div></div>';
+
+  try {
+    var rawText = provider === 'gemini'
+      ? await callGemini(prompt)
+      : await callAnthropic(prompt);
+
+    var clean = rawText.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+    var parsed = JSON.parse(clean);
+    currentMeals = parsed.meals || [];
+    if (currentMeals.length === 0) throw new Error('提案が取得できませんでした。もう一度お試しください。');
     renderMeals();
     toggleForm(false);
-  }catch(e){
-    document.getElementById('resultArea').innerHTML='<div class="error-box">⚠️ '+esc(e.message)+'</div>';
-    showToast(e.message,'error');
-  }finally{
-    btn.disabled=false;btn.textContent='✨ 献立を提案してもらう';
+  } catch(e) {
+    document.getElementById('resultArea').innerHTML = '<div class="error-box">⚠️ '+esc(e.message)+'</div>';
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ 献立を提案してもらう';
   }
 }
 
-function renderMeals(){
-  var area=document.getElementById('resultArea');
-  area.innerHTML='';
-  currentMeals.forEach(function(m,i){
-    var isSaved=logs.some(function(l){return l.mealRef===makeMealRef(m);});
-    var card=document.createElement('div');
-    card.className='meal-card';
-    card.innerHTML=
+/* ===== RENDER MEALS ===== */
+function renderMeals() {
+  var area = document.getElementById('resultArea');
+  area.innerHTML = '';
+  currentMeals.forEach(function(m, i) {
+    var isSaved = logs.some(function(l){return l.mealRef===makeMealRef(m);});
+    var card = document.createElement('div');
+    card.className = 'meal-card';
+    card.innerHTML =
       '<div class="meal-head" onclick="toggleCard('+i+')">'
         +'<div class="meal-title">'+esc(m.name)+'</div>'
         +'<div class="meal-badges">'
@@ -453,51 +581,46 @@ function renderMeals(){
           +(m.cookTime?'<div class="meal-cook">⏱ '+esc(m.cookTime)+'</div>':'')
           +'<p class="meal-desc">'+esc(m.description||'')+'</p>'
           +(m.ingredients&&m.ingredients.length
-            ?'<div class="sec-title">材料</div><div class="chips">'+m.ingredients.map(function(x){return'<span class="chip">'+esc(x)+'</span>';}).join('')+'</div>'
-            :'')
+            ?'<div class="sec-title">材料</div><div class="chips">'+m.ingredients.map(function(x){return'<span class="chip">'+esc(x)+'</span>';}).join('')+'</div>':'')
           +(m.steps&&m.steps.length
-            ?'<div class="sec-title">作り方</div><div class="steps-list">'+m.steps.map(function(s,si){return'<div class="step-row"><div class="step-num">'+(si+1)+'</div><div>'+esc(s)+'</div></div>';}).join('')+'</div>'
-            :'')
+            ?'<div class="sec-title">作り方</div><div class="steps-list">'+m.steps.map(function(s,si){
+              return'<div class="step-row"><div class="step-num">'+(si+1)+'</div><div>'+esc(s)+'</div></div>';
+            }).join('')+'</div>':'')
           +'<button class="save-btn'+(isSaved?' saved':'')+(isSaved?'" onclick=""':'" onclick="saveMeal('+i+')"')+'>'+(isSaved?'✓ 保存済み':'📌 ログに保存')+'</button>'
         +'</div>'
       +'</div>';
     area.appendChild(card);
   });
 }
-
-function toggleCard(i){
+function toggleCard(i) {
   var body=document.getElementById('mbody-'+i);
   var chev=document.getElementById('chev-'+i);
-  var open=body.classList.toggle('open');
-  chev.classList.toggle('open',open);
+  chev.classList.toggle('open', body.classList.toggle('open'));
 }
-
 function makeMealRef(m){return m.name+'|'+m.category+'|'+m.calories;}
 
-function saveMeal(i){
-  var m=currentMeals[i];if(!m)return;
+/* ===== SAVE MEAL ===== */
+function saveMeal(i) {
+  var m=currentMeals[i]; if(!m)return;
   var entry={
     id:Date.now()+'_'+Math.random().toString(36).slice(2,6),
-    mealRef:makeMealRef(m),
-    name:m.name,category:m.category||'',calories:m.calories||'',
-    cookTime:m.cookTime||'',description:m.description||'',
+    mealRef:makeMealRef(m),name:m.name,category:m.category||'',
+    calories:m.calories||'',cookTime:m.cookTime||'',description:m.description||'',
     ingredients:m.ingredients||[],steps:m.steps||[],
     savedAt:new Date().toISOString()
   };
-  logs.unshift(entry);
-  persistLogs();updateBadge();
+  logs.unshift(entry); persistLogs(); updateBadge();
   var btn=document.getElementById('mbody-'+i).querySelector('.save-btn');
   if(btn){btn.textContent='✓ 保存済み';btn.classList.add('saved');btn.onclick=null;}
   showToast('「'+m.name+'」を保存しました','success');
 }
 
+/* ===== LOG ===== */
 function persistLogs(){localStorage.setItem('menuAppLogs',JSON.stringify(logs));}
-
 function updateBadge(){
   document.getElementById('logBadge').textContent=logs.length;
   document.getElementById('logCountLabel').textContent=logs.length+' 件保存済み';
 }
-
 function renderLogs(){
   updateBadge();
   var list=document.getElementById('logList');
@@ -508,7 +631,7 @@ function renderLogs(){
   list.innerHTML='';
   logs.forEach(function(entry,i){
     var d=new Date(entry.savedAt);
-    var ds=d.getFullYear()+'/'+(d.getMonth()+1+'').padStart(2,'0')+'/'+(''+d.getDate()).padStart(2,'0');
+    var ds=d.getFullYear()+'/'+(String(d.getMonth()+1).padStart(2,'0'))+'/'+String(d.getDate()).padStart(2,'0');
     var item=document.createElement('div');
     item.className='log-item';
     item.innerHTML=
@@ -525,25 +648,23 @@ function renderLogs(){
     list.appendChild(item);
   });
 }
-
 function deleteLog(i){
   var name=logs[i]?logs[i].name:'';
   logs.splice(i,1);persistLogs();renderLogs();
   showToast('「'+name+'」を削除しました');
 }
-
 function clearAllLogs(){
   if(logs.length===0){showToast('ログは空です');return;}
   if(!confirm('全 '+logs.length+' 件のログを削除してよいですか？'))return;
-  logs=[];persistLogs();renderLogs();
-  showToast('全ログを削除しました');
+  logs=[];persistLogs();renderLogs();showToast('全ログを削除しました');
 }
 
+/* ===== EXPORT ===== */
 function exportLogs(){
   if(logs.length===0){showToast('エクスポートするログがありません');return;}
   var items=logs.map(function(e){
     var d=new Date(e.savedAt);
-    var ds=d.getFullYear()+'/'+(d.getMonth()+1+'').padStart(2,'0')+'/'+(''+d.getDate()).padStart(2,'0');
+    var ds=d.getFullYear()+'/'+(String(d.getMonth()+1).padStart(2,'0'))+'/'+String(d.getDate()).padStart(2,'0');
     return '<div class="entry">'
       +'<div class="entry-head"><span class="ename">'+esc(e.name)+'</span>'
       +'<span class="emeta">'+[e.category,e.calories?e.calories+'kcal':'',e.cookTime].filter(Boolean).join(' ｜ ')+'</span>'
@@ -552,7 +673,7 @@ function exportLogs(){
       +(e.ingredients&&e.ingredients.length?'<div class="eingr">🥕 '+e.ingredients.map(function(x){return esc(x);}).join('、')+'</div>':'')
       +'</div>';
   }).join('\n');
-  var html='<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>献立ログ｜今日の献立</title>\n<style>\nbody{font-family:"Noto Sans JP",sans-serif;background:#faf6f0;color:#2c1a0e;max-width:680px;margin:0 auto;padding:20px 16px}\nh1{font-family:"Noto Serif JP",serif;font-size:22px;color:#5c3d2e;margin-bottom:4px}\n.subtitle{font-size:13px;color:#9e7055;margin-bottom:24px}\n.entry{background:#fff9f2;border:1.5px solid #e0cdb4;border-radius:12px;padding:15px 17px;margin-bottom:11px}\n.entry-head{display:flex;flex-wrap:wrap;gap:7px;align-items:baseline;margin-bottom:7px}\n.ename{font-size:17px;font-weight:700;color:#5c3d2e;font-family:"Noto Serif JP",serif}\n.emeta{font-size:12px;color:#9e7055}\n.edate{font-size:12px;color:#b07d54;margin-left:auto}\n.edesc{font-size:13px;color:#6b4535;line-height:1.75;margin:0 0 7px}\n.eingr{font-size:12px;color:#9e7055}\n</style>\n</head>\n<body>\n<h1>🍱 献立ログ</h1>\n<p class="subtitle">エクスポート日：'+new Date().toLocaleDateString('ja-JP')+' ｜ '+logs.length+'件</p>\n<!--MENUAPP_LOG_JSON\n'+JSON.stringify(logs,null,2)+'\nEND_MENUAPP_LOG_JSON-->\n'+items+'\n</body>\n</html>';
+  var html='<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>献立ログ</title>\n<style>\nbody{font-family:"Noto Sans JP",sans-serif;background:#faf6f0;color:#2c1a0e;max-width:680px;margin:0 auto;padding:20px 16px}\nh1{font-family:"Noto Serif JP",serif;font-size:22px;color:#5c3d2e;margin-bottom:4px}\n.subtitle{font-size:13px;color:#9e7055;margin-bottom:24px}\n.entry{background:#fff9f2;border:1.5px solid #e0cdb4;border-radius:12px;padding:15px 17px;margin-bottom:11px}\n.entry-head{display:flex;flex-wrap:wrap;gap:7px;align-items:baseline;margin-bottom:7px}\n.ename{font-size:17px;font-weight:700;color:#5c3d2e;font-family:"Noto Serif JP",serif}\n.emeta{font-size:12px;color:#9e7055}\n.edate{font-size:12px;color:#b07d54;margin-left:auto}\n.edesc{font-size:13px;color:#6b4535;line-height:1.75;margin:0 0 7px}\n.eingr{font-size:12px;color:#9e7055}\n</style>\n</head>\n<body>\n<h1>🍱 献立ログ</h1>\n<p class="subtitle">エクスポート日：'+new Date().toLocaleDateString('ja-JP')+' ｜ '+logs.length+'件</p>\n<!--MENUAPP_LOG_JSON\n'+JSON.stringify(logs,null,2)+'\nEND_MENUAPP_LOG_JSON-->\n'+items+'\n</body>\n</html>';
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});
   var url=URL.createObjectURL(blob);
   var a=document.createElement('a');
@@ -562,8 +683,8 @@ function exportLogs(){
   showToast(logs.length+'件をエクスポートしました','success');
 }
 
+/* ===== IMPORT ===== */
 function triggerImport(){document.getElementById('importInput').click();}
-
 function handleImport(input){
   var file=input.files[0];if(!file)return;
   var reader=new FileReader();
@@ -576,30 +697,26 @@ function handleImport(input){
       if(!Array.isArray(imported))throw new Error('データ形式が不正です');
       var existIds=new Set(logs.map(function(l){return l.id;}));
       var added=0;
-      imported.forEach(function(entry){
-        if(!existIds.has(entry.id)){logs.push(entry);added++;}
-      });
+      imported.forEach(function(entry){if(!existIds.has(entry.id)){logs.push(entry);added++;}});
       logs.sort(function(a,b){return new Date(b.savedAt)-new Date(a.savedAt);});
       persistLogs();renderLogs();
       showToast(added+'件をインポートしました（重複除外済み）','success');
-    }catch(err){
-      showToast('インポート失敗: '+err.message,'error');
-    }
+    }catch(err){showToast('インポート失敗: '+err.message,'error');}
     input.value='';
   };
   reader.readAsText(file,'utf-8');
 }
 
+/* ===== TOAST ===== */
 var toastTimer;
 function showToast(msg,type){
   var el=document.getElementById('toast');
-  el.textContent=msg;
-  el.className='toast'+(type?' '+type:'');
-  el.classList.add('visible');
-  clearTimeout(toastTimer);
+  el.textContent=msg;el.className='toast'+(type?' '+type:'');
+  el.classList.add('visible');clearTimeout(toastTimer);
   toastTimer=setTimeout(function(){el.classList.remove('visible');},3200);
 }
 
+/* ===== UTIL ===== */
 function esc(str){
   if(!str)return'';
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
