@@ -10,10 +10,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{
+:root {
   --bg:#faf6f0;--card:#fff9f2;--border:#e0cdb4;
   --br1:#2c1a0e;--br2:#5c3d2e;--br3:#8b5e3c;--br4:#b07d54;--br5:#d4a97a;--br6:#e8d5b7;
-  --cream:#f5ede0;--acc:#b5451b;--accl:#e07a5f;--grn:#4a7a55;--grnl:#d4edda;
+  --cream:#f5ede0;--acc:#b5451b;--accl:#e07a5f;--grn:#4a7a55;
   --txt:#2c1a0e;--txm:#6b4535;--txl:#9e7055;--shd:rgba(44,26,14,0.10);
   --r:14px;--rs:8px;
   --serif:'Noto Serif JP',serif;--sans:'Noto Sans JP',sans-serif;
@@ -24,7 +24,7 @@ button{font-family:var(--sans);cursor:pointer}
 input,textarea,select{font-family:var(--sans);font-size:16px}
 textarea{resize:none}
 
-/* ===== MODAL ===== */
+/* MODAL */
 .modal-overlay{position:fixed;inset:0;z-index:9999;background:rgba(44,26,14,.65);display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);animation:fadeIn .2s ease}
 .modal-overlay.hidden{display:none}
 .modal-box{background:var(--card);border-radius:var(--r);padding:28px 24px;width:100%;max-width:440px;box-shadow:0 12px 40px rgba(44,26,14,.3);animation:slideUp .25s ease}
@@ -40,7 +40,7 @@ textarea{resize:none}
 .provider-hint a{color:var(--br3);text-decoration:none}
 .modal-section-label{font-size:12px;font-weight:700;color:var(--txl);letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
 
-/* ===== HEADER ===== */
+/* HEADER */
 .app-header{background:var(--br2);color:#fff9f2;padding:0 18px;padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top));display:flex;align-items:flex-end;justify-content:space-between;padding-bottom:12px;position:sticky;top:0;z-index:200;box-shadow:0 2px 14px rgba(44,26,14,.18)}
 .header-left{display:flex;align-items:baseline;gap:8px}
 .header-title{font-family:var(--serif);font-size:19px;font-weight:700;letter-spacing:.04em;line-height:1}
@@ -51,17 +51,17 @@ textarea{resize:none}
 .icon-btn{background:none;border:none;color:rgba(255,249,242,.75);font-size:20px;padding:4px 7px;border-radius:6px;transition:all .15s;line-height:1}
 .icon-btn:hover{color:#fff9f2;background:rgba(255,249,242,.12)}
 
-/* ===== TABS ===== */
+/* TABS */
 .tab-nav{display:flex;background:var(--card);border-bottom:1.5px solid var(--border);position:sticky;top:calc(52px + env(safe-area-inset-top));z-index:190}
-.tab-btn{flex:1;background:none;border:none;padding:11px 6px;font-size:13px;font-weight:500;color:var(--txl);position:relative;transition:color .2s;letter-spacing:.02em}
+.tab-btn{flex:1;background:none;border:none;padding:12px 8px;font-size:14px;font-weight:500;color:var(--txl);position:relative;transition:color .2s;letter-spacing:.02em}
 .tab-btn.active{color:var(--br2)}
-.tab-btn.active::after{content:'';position:absolute;bottom:-1.5px;left:15%;right:15%;height:2.5px;background:var(--br3);border-radius:2px}
-.tab-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--br5);color:var(--br1);font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:10px;padding:0 4px;margin-left:4px;vertical-align:middle}
+.tab-btn.active::after{content:'';position:absolute;bottom:-1.5px;left:20%;right:20%;height:2.5px;background:var(--br3);border-radius:2px}
+.tab-badge{display:inline-flex;align-items:center;justify-content:center;background:var(--br5);color:var(--br1);font-size:10px;font-weight:700;min-width:17px;height:17px;border-radius:10px;padding:0 4px;margin-left:5px;vertical-align:middle}
 
-/* ===== PAGE ===== */
+/* PAGE */
 .page{display:none}.page.active{display:block}
 
-/* ===== INPUT PANEL ===== */
+/* INPUT PANEL */
 .input-panel{background:var(--card);border-bottom:1.5px solid var(--border)}
 .input-toggle{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;cursor:pointer;user-select:none;transition:background .15s}
 .input-toggle:active{background:var(--cream)}
@@ -93,9 +93,7 @@ textarea{resize:none}
 .suggest-btn:active{transform:scale(.98);background:var(--br3)}
 .suggest-btn:disabled{opacity:.5;transform:none;cursor:not-allowed}
 
-.inventory-none{font-size:13px;color:var(--txl)}
-
-/* ===== RESULT ===== */
+/* RESULT */
 .result-area{padding:16px}
 .empty-state{text-align:center;padding:52px 20px;color:var(--txl)}
 .empty-state .eico{font-size:52px;margin-bottom:14px}
@@ -106,7 +104,7 @@ textarea{resize:none}
 .loading-text{font-size:14px;color:var(--txl)}
 .error-box{background:#fdf0ed;border:1.5px solid var(--accl);border-radius:var(--r);padding:16px;font-size:13px;line-height:1.75;color:var(--acc);margin-bottom:12px}
 
-/* ===== MEAL CARD ===== */
+/* MEAL CARD */
 .meal-card{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);margin-bottom:12px;overflow:hidden;box-shadow:0 2px 10px var(--shd);animation:slideUp .3s ease both}
 .meal-card:nth-child(1){animation-delay:.00s}.meal-card:nth-child(2){animation-delay:.06s}
 .meal-card:nth-child(3){animation-delay:.12s}.meal-card:nth-child(4){animation-delay:.18s}
@@ -134,7 +132,7 @@ textarea{resize:none}
 .save-btn:hover{background:var(--cream)}
 .save-btn.saved{background:#f0faf2;border-color:var(--grn);color:var(--grn);cursor:default}
 
-/* ===== LOG PAGE ===== */
+/* LOG PAGE */
 .log-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;padding:13px 16px;background:var(--card);border-bottom:1.5px solid var(--border)}
 .log-count{font-size:13px;color:var(--txl);flex-shrink:0}
 .toolbar-btns{display:flex;gap:7px;flex-wrap:wrap}
@@ -154,34 +152,24 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
 .log-empty{text-align:center;padding:52px 20px;color:var(--txl)}
 .log-empty .eico{font-size:42px;margin-bottom:12px}
 .log-empty p{font-size:14px;line-height:1.9}
-.log-item{background:var(--card);border-radius:var(--r);border:1.5px solid var(--border);padding:13px 15px;margin-bottom:10px;display:flex;align-items:flex-start;gap:12px;box-shadow:0 1px 5px var(--shd);animation:slideUp .25s ease both}
-.log-info{flex:1;min-width:0}
-.log-name{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--br2);margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.log-meta{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--txl)}
-.log-del{flex-shrink:0;background:none;border:none;font-size:19px;color:var(--br5);padding:3px 5px;border-radius:5px;transition:color .2s;line-height:1}
-.log-del:hover{color:var(--acc)}
-.log-preview{font-size:12px;color:var(--txl);margin-top:5px;line-height:1.6}
+/* アコーディオンカード内の削除・アクション */
 .log-del-btn{width:100%;padding:10px;border-radius:var(--rs);border:1.5px solid var(--accl);background:transparent;color:var(--acc);font-size:13px;font-weight:500;transition:all .2s;margin-top:4px}
 .log-del-btn:hover{background:#fdf0ed}
 .log-del-btn.locked{border-color:var(--border);color:var(--txl);cursor:default}
 .log-del-btn.locked:hover{background:transparent}
+/* お気に入り */
 .fav-btn{background:none;border:none;font-size:20px;line-height:1;padding:2px 4px;cursor:pointer;flex-shrink:0;transition:transform .15s}
 .fav-btn:active{transform:scale(1.3)}
 .fav-filter-btn{padding:7px 13px;font-size:13px;border-radius:20px;border:1.5px solid var(--border);background:#fff;color:var(--txl);cursor:pointer;white-space:nowrap;transition:all .18s;flex-shrink:0}
 .fav-filter-btn.active{border-color:#e8a000;background:#fff8e6;color:#8a5e00;font-weight:500}
-/* made count */
-.made-badge{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;border-radius:10px;background:#f0f7ff;color:#2a6496;border:1px solid #c8e0f5;white-space:nowrap}
+/* 類似提案アクション */
 .card-actions{display:flex;flex-direction:column;gap:7px;margin-top:12px}
 .action-row{display:flex;gap:7px}
 .action-btn-sm{flex:1;padding:9px 6px;border-radius:var(--rs);font-size:13px;font-weight:500;border:1.5px solid var(--border);background:#fff;color:var(--txm);transition:all .18s;cursor:pointer}
 .action-btn-sm:hover{background:var(--cream)}
-.action-btn-sm.made{border-color:#6aacde;color:#2a6496;background:#f0f7ff}
-.action-btn-sm.made:hover{background:#d9ecf8}
-.action-btn-sm.regen{border-color:var(--br5);color:var(--br3)}
-.action-btn-sm.regen:hover{background:var(--cream)}
 .action-btn-sm.similar{border-color:var(--br3);color:var(--br2);background:var(--cream)}
 .action-btn-sm.similar:hover{background:var(--br6)}
-/* save modal */
+/* 保存選択モーダル */
 .save-modal-overlay{position:fixed;inset:0;z-index:9998;background:rgba(44,26,14,.55);display:flex;align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom);backdrop-filter:blur(3px);animation:fadeIn .2s ease}
 .save-modal-overlay.hidden{display:none}
 .save-modal-box{background:var(--card);border-radius:var(--r) var(--r) 0 0;padding:24px 20px;width:100%;max-width:480px;box-shadow:0 -4px 24px rgba(44,26,14,.18);animation:slideUp .25s ease}
@@ -197,8 +185,7 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
 .save-modal-btn.cancel{background:transparent;color:var(--txl);border:1.5px solid var(--border)}
 .save-modal-btn.cancel:hover{background:var(--cream)}
 
-
-/* ===== TOAST ===== */
+/* TOAST */
 .toast{position:fixed;bottom:calc(28px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%) translateY(120px);background:var(--br1);color:#fff9f2;padding:13px 22px;border-radius:16px;font-size:14px;font-weight:500;z-index:9000;white-space:pre-wrap;word-break:break-all;max-width:92vw;text-align:center;box-shadow:0 4px 20px rgba(44,26,14,.25);transition:transform .32s cubic-bezier(.4,0,.2,1);pointer-events:none;line-height:1.6}
 .toast.visible{transform:translateX(-50%) translateY(0)}
 .toast.error{background:var(--acc)}
@@ -215,7 +202,7 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
 </head>
 <body>
 
-<!-- ===== API KEY MODAL ===== -->
+<!-- 設定モーダル -->
 <div class="modal-overlay hidden" id="apiModal">
   <div class="modal-box">
     <h2>⚙️ API設定</h2>
@@ -244,24 +231,35 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
   </div>
 </div>
 
-<!-- ===== HEADER ===== -->
+<!-- 保存選択モーダル -->
+<div class="save-modal-overlay hidden" id="saveModal">
+  <div class="save-modal-box">
+    <h3>💾 保存方法を選択</h3>
+    <p id="saveModalDesc">この献立をどのように保存しますか？</p>
+    <div class="save-modal-btns">
+      <button class="save-modal-btn overwrite" onclick="doSaveModal('overwrite')">上書き保存</button>
+      <button class="save-modal-btn newlog"    onclick="doSaveModal('new')">新規保存（別の献立として追加）</button>
+      <button class="save-modal-btn cancel"    onclick="doSaveModal('cancel')">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
 <header class="app-header">
   <div class="header-left">
     <div class="header-title">🍱 今日の献立</div>
     <span class="provider-badge none" id="providerBadge">未設定</span>
   </div>
-  <div style="display:flex;align-items:center;gap:4px">
-    <button class="icon-btn" onclick="openSettings()" title="API設定">⚙️</button>
-  </div>
+  <button class="icon-btn" onclick="openSettings()" title="API設定">⚙️</button>
 </header>
 
-<!-- ===== TABS ===== -->
+<!-- TABS -->
 <nav class="tab-nav">
   <button class="tab-btn active" id="tab-suggest" onclick="switchTab('suggest')">🍽 提案</button>
-  <button class="tab-btn" id="tab-log" onclick="switchTab('log')">📋 ログ<span class="tab-badge" id="logBadge">0</span></button>
+  <button class="tab-btn" id="tab-log" onclick="switchTab('log')">📋 ログ <span class="tab-badge" id="logBadge">0</span></button>
 </nav>
 
-<!-- ===== 提案ページ ===== -->
+<!-- 提案ページ -->
 <div class="page active" id="page-suggest">
   <div class="input-panel">
     <div class="input-toggle" onclick="toggleForm()">
@@ -295,13 +293,8 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
           <div class="cal-result" id="calResult"></div>
         </div>
       </div>
-      </div>
 
-      <div class="form-group">
-        <label class="form-label" for="priorityIngr">優先して使いたい食材</label>
-        <input type="text" id="priorityIngr" class="text-input" placeholder="例：キャベツ半玉、卵">
-      </div>
-
+      <!-- 除外食材（メモリー機能付き） -->
       <div class="form-group">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px;flex-wrap:wrap">
           <label class="form-label" for="exclude" style="margin-bottom:0">除外したい食材・アレルギー</label>
@@ -328,21 +321,20 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
       </div>
 
       <div class="form-group" style="margin-bottom:10px">
-        <label class="form-label" for="notes">その他要望・備考</label>
-        <textarea id="notes" class="textarea-input" rows="2" placeholder="例：和食希望、子供も食べる"></textarea>
+        <label class="form-label" for="notes">備考・その他</label>
+        <textarea id="notes" class="textarea-input" rows="2" placeholder="例：冷蔵庫に豚肉がある、子供も食べる、ダイエット中"></textarea>
       </div>
 
       <button class="suggest-btn" id="suggestBtn" onclick="getSuggestion()">✨ 献立を提案してもらう</button>
     </div>
   </div>
-
   <div class="result-area" id="resultArea">
     <div class="empty-state"><div class="eico">🍱</div><p>条件を設定して<br>「提案してもらう」を押してください</p></div>
   </div>
   <div class="bottom-space"></div>
 </div>
 
-<!-- ===== ログページ ===== -->
+<!-- ログページ -->
 <div class="page" id="page-log">
   <div class="log-toolbar">
     <span class="log-count" id="logCountLabel">0 件保存済み</span>
@@ -358,28 +350,14 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
       <input type="search" class="search-input" id="logSearch" placeholder="🔍 料理名・材料・作り方で検索" oninput="onSearch()" autocomplete="off" spellcheck="false">
       <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
     </div>
-    <button class="fav-filter-btn" id="logFavFilter" onclick="toggleLogFavFilter()">⭐ お気に入り</button>
+    <button class="fav-filter-btn" id="logFavFilter" onclick="toggleFavFilter()">⭐ お気に入り</button>
     <span class="search-hit" id="searchHit"></span>
   </div>
   <div class="log-list" id="logList"></div>
   <div class="bottom-space"></div>
 </div>
 
-<input type="file" id="importInput" accept=".html" style="display:none" onchange="handleImport(this)">
-
-<!-- ===== 保存選択モーダル ===== -->
-<div class="save-modal-overlay hidden" id="saveModal">
-  <div class="save-modal-box">
-    <h3>💾 保存方法を選択</h3>
-    <p id="saveModalDesc">この献立をどのように保存しますか？</p>
-    <div class="save-modal-btns">
-      <button class="save-modal-btn overwrite" onclick="doSaveModal('overwrite')">上書き保存</button>
-      <button class="save-modal-btn newlog"    onclick="doSaveModal('new')">新規保存（別の献立として追加）</button>
-      <button class="save-modal-btn cancel"    onclick="doSaveModal('cancel')">キャンセル</button>
-    </div>
-  </div>
-</div>
-
+<input type="file" id="importInput" accept=".html,.json" style="display:none" onchange="handleImport(this)">
 <div class="toast" id="toast"></div>
 
 <script>
@@ -387,6 +365,7 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
 var provider = 'anthropic';
 var keys = { anthropic: '', gemini: '' };
 var logs = [], currentMeals = [], formOpen = false;
+var searchQuery = '', favOnly = false;
 
 /* ===== INIT ===== */
 function init() {
@@ -395,8 +374,6 @@ function init() {
   keys.gemini    = localStorage.getItem('menuKeyGemini')    || '';
   document.getElementById('geminiModel').value = localStorage.getItem('menuGeminiModel') || 'gemini-3.1-flash-lite';
   logs = JSON.parse(localStorage.getItem('menuAppLogs') || '[]');
-
-  }
 
   updateProviderBadge();
   updateBadge();
@@ -408,6 +385,10 @@ function init() {
 
   ['weight','height','activity'].forEach(function(id){
     document.getElementById(id).addEventListener('input', calcTDEE);
+  });
+
+  document.getElementById('saveModal').addEventListener('click', function(e){
+    if (e.target === this) doSaveModal('cancel');
   });
 }
 
@@ -477,8 +458,27 @@ function toggleForm(force) {
   document.getElementById('toggleIcon').classList.toggle('open', formOpen);
 }
 
-
-
+/* ===== 除外食材メモリー ===== */
+function loadExcludeMemo() {
+  var memo = localStorage.getItem('menuExcludeMemo') || '';
+  if (memo) {
+    document.getElementById('exclude').value = memo;
+    document.getElementById('excludeMemoBadge').textContent = '記憶済み';
+  }
+}
+function saveExcludeMemo() {
+  var val = document.getElementById('exclude').value.trim();
+  if (!val) { showToast('除外食材を入力してから記憶してください'); return; }
+  localStorage.setItem('menuExcludeMemo', val);
+  document.getElementById('excludeMemoBadge').textContent = '記憶済み';
+  showToast('除外食材を記憶しました','success');
+}
+function clearExcludeMemo() {
+  localStorage.removeItem('menuExcludeMemo');
+  document.getElementById('exclude').value = '';
+  document.getElementById('excludeMemoBadge').textContent = '';
+  showToast('除外食材の記憶を削除しました');
+}
 
 /* ===== CALORIE ===== */
 function onCalModeChange() {
@@ -503,21 +503,17 @@ function getCalorieInfo() {
 
 /* ===== BUILD PROMPT ===== */
 function buildPrompt() {
-  var calorie   = getCalorieInfo();
-  var priority  = document.getElementById('priorityIngr').value.trim();
-  var exclude   = document.getElementById('exclude').value.trim();
-  var mood      = document.getElementById('mood').value.trim();
-  var cookTime  = document.querySelector('input[name="cookTime"]:checked').value;
-  var notes     = document.getElementById('notes').value.trim();
-
-
+  var calorie  = getCalorieInfo();
+  var exclude  = document.getElementById('exclude').value.trim();
+  var mood     = document.getElementById('mood').value.trim();
+  var cookTime = document.querySelector('input[name="cookTime"]:checked').value;
+  var notes    = document.getElementById('notes').value.trim();
   return 'あなたはプロの栄養士です。以下の条件で本日の献立を3〜5品提案してください。\n\n【条件】\n- 目標カロリー: '+calorie+'\n'
-    +(priority?'- 優先して使いたい食材: '+priority+'\n':'')
     +(exclude?'- 除外・アレルギー: '+exclude+'\n':'')
     +(mood?'- 気分・希望: '+mood+'\n':'')
     +'- 調理時間: '+cookTime+'\n'
-    +(notes?'- その他要望: '+notes+'\n':'')
-    +'\n必ず以下のJSON形式のみで出力してください（説明文・Markdownコードブロック不要）：\n{"meals":[{"name":"料理名","category":"朝食/昼食/夕食/おやつ","calories":数値,"cookTime":"XX分","description":"2〜3文の説明","ingredients":[{"name":"材料名","amount":"分量"}],"steps":["手順1","手順2"]}]}';
+    +(notes?'- 備考: '+notes+'\n':'')
+    +'\n必ず以下のJSON形式のみで出力してください（説明文・Markdownコードブロック不要）：\n{"meals":[{"name":"料理名","category":"朝食/昼食/夕食/おやつ","calories":数値,"cookTime":"XX分","description":"2〜3文の説明","ingredients":["材料1","材料2"],"steps":["手順1","手順2"]}]}';
 }
 
 /* ===== API: ANTHROPIC ===== */
@@ -585,7 +581,7 @@ function renderMeals() {
       +'<div class="meal-body" id="mbody-'+i+'"><div class="meal-inner">'
       +(m.cookTime?'<div class="meal-cook">⏱ '+esc(m.cookTime)+'</div>':'')
       +'<p class="meal-desc">'+esc(m.description||'')+'</p>'
-      +(m.ingredients&&m.ingredients.length?'<div class="sec-title">材料</div><div class="chips">'+m.ingredients.map(function(x){return'<span class="chip">'+esc(ingrLabel(x))+'</span>';}).join('')+'</div>':'')
+      +(m.ingredients&&m.ingredients.length?'<div class="sec-title">材料</div><div class="chips">'+m.ingredients.map(function(x){return'<span class="chip">'+esc(x)+'</span>';}).join('')+'</div>':'')
       +(m.steps&&m.steps.length?'<div class="sec-title">作り方</div><div class="steps-list">'+m.steps.map(function(s,si){return'<div class="step-row"><div class="step-num">'+(si+1)+'</div><div>'+esc(s)+'</div></div>';}).join('')+'</div>':'')
       +'<button class="save-btn'+(isSaved?' saved':'')+(isSaved?'" onclick=""':'" onclick="saveMeal('+i+')"')+'>'+(isSaved?'✓ 保存済み':'📌 ログに保存')+'</button>'
       +'</div></div>';
@@ -600,7 +596,8 @@ function saveMeal(i) {
   var m=currentMeals[i];if(!m)return;
   var entry={id:Date.now()+'_'+Math.random().toString(36).slice(2,6),mealRef:makeMealRef(m),
     name:m.name,category:m.category||'',calories:m.calories||'',cookTime:m.cookTime||'',
-    description:m.description||'',ingredients:m.ingredients||[],steps:m.steps||[],savedAt:new Date().toISOString()};
+    description:m.description||'',ingredients:m.ingredients||[],steps:m.steps||[],
+    savedAt:new Date().toISOString()};
   logs.unshift(entry);persistLogs();updateBadge();
   var btn=document.getElementById('mbody-'+i).querySelector('.save-btn');
   if(btn){btn.textContent='✓ 保存済み';btn.classList.add('saved');btn.onclick=null;}
@@ -614,25 +611,23 @@ function updateBadge(){
   document.getElementById('logCountLabel').textContent=logs.length+' 件保存済み';
 }
 
-var searchQuery='';
-var logFavOnly=false;
-
-function toggleLogFavFilter(){
-  logFavOnly=!logFavOnly;
-  document.getElementById('logFavFilter').classList.toggle('active',logFavOnly);
+/* ===== お気に入り ===== */
+function toggleFavFilter(){
+  favOnly=!favOnly;
+  document.getElementById('logFavFilter').classList.toggle('active',favOnly);
   renderLogs();
 }
 function toggleFavorite(id){
   var entry=logs.find(function(l){return l.id===id;});
   if(!entry)return;
   entry.favorite=!entry.favorite;
-  persistLogs();
-  renderLogs();
-  showToast(entry.favorite?'⭐ お気に入りに追加しました':'お気に入りを解除しました', entry.favorite?'success':'');
+  persistLogs();renderLogs();
+  showToast(entry.favorite?'⭐ お気に入りに追加しました':'お気に入りを解除しました',entry.favorite?'success':'');
 }
+
+/* ===== SEARCH ===== */
 function onSearch(){
-  var input=document.getElementById('logSearch');
-  searchQuery=input.value.trim();
+  searchQuery=document.getElementById('logSearch').value.trim();
   document.getElementById('searchClear').classList.toggle('show',searchQuery.length>0);
   renderLogs();
 }
@@ -653,19 +648,18 @@ function matchesSearch(entry,q){
   if((entry.category||'').toLowerCase().includes(lower))return true;
   if((entry.description||'').toLowerCase().includes(lower))return true;
   if((entry.cookTime||'').toLowerCase().includes(lower))return true;
-  if(entry.ingredients&&entry.ingredients.some(function(x){return ingrName(x).toLowerCase().includes(lower);}))return true;
-  if(entry.steps&&entry.steps.some(function(x){return x.toLowerCase().includes(lower);}))return true;
+  if(entry.ingredients&&entry.ingredients.some(function(x){return String(x).toLowerCase().includes(lower);}))return true;
+  if(entry.steps&&entry.steps.some(function(x){return String(x).toLowerCase().includes(lower);}))return true;
   return false;
 }
+
+/* ===== RENDER LOGS (アコーディオン) ===== */
 function renderLogs(){
   updateBadge();
   var list=document.getElementById('logList');var q=searchQuery;
-  var filtered=logs.filter(function(e){
-    return matchesSearch(e,q)&&(!logFavOnly||e.favorite);
-  });
-
+  var filtered=logs.filter(function(e){return matchesSearch(e,q)&&(!favOnly||e.favorite);});
   var hitEl=document.getElementById('searchHit');
-  hitEl.textContent=(q||logFavOnly)?filtered.length+'件':'';
+  hitEl.textContent=(q||favOnly)?filtered.length+'件':'';
   if(logs.length===0){list.innerHTML='<div class="log-empty"><div class="eico">📋</div><p>まだ保存した献立はありません。<br>提案画面から「ログに保存」してください。</p></div>';return;}
   if(filtered.length===0){list.innerHTML='<div class="log-empty"><div class="eico">🔍</div><p>条件に一致する献立が<br>見つかりませんでした。</p></div>';return;}
   list.innerHTML='';
@@ -678,45 +672,40 @@ function renderLogs(){
     var card=document.createElement('div');
     card.className='meal-card';
     card.style.animationDelay=(fi*0.05)+'s';
+
     var ingrHtml='';
     if(entry.ingredients&&entry.ingredients.length){
-      ingrHtml='<div class="sec-title">材料</div><div class="chips">'
-        +entry.ingredients.map(function(x){return'<span class="chip">'+highlight(ingrLabel(x),q)+'</span>';}).join('')+'</div>';
+      ingrHtml='<div class="sec-title">材料</div><div class="chips">'+entry.ingredients.map(function(x){return'<span class="chip">'+highlight(String(x),q)+'</span>';}).join('')+'</div>';
     }
     var stepsHtml='';
     if(entry.steps&&entry.steps.length){
-      stepsHtml='<div class="sec-title">作り方</div><div class="steps-list">'
-        +entry.steps.map(function(s,si){
-          return'<div class="step-row"><div class="step-num">'+(si+1)+'</div><div>'+highlight(esc(s),q)+'</div></div>';
-        }).join('')+'</div>';
+      stepsHtml='<div class="sec-title">作り方</div><div class="steps-list">'+entry.steps.map(function(s,si){
+        return'<div class="step-row"><div class="step-num">'+(si+1)+'</div><div>'+highlight(esc(String(s)),q)+'</div></div>';
+      }).join('')+'</div>';
     }
     var delBtn=isFav
       ?'<button class="log-del-btn locked">⭐ お気に入り中は削除できません</button>'
       :'<button class="log-del-btn" onclick="deleteLog('+realIdx+')">🗑 このログを削除</button>';
-    var madeLabel = entry.madeCount
-      ? '<span class="made-badge">🍳 '+entry.madeCount+'回作った'+(entry.lastMadeAt?' · '+new Date(entry.lastMadeAt).toLocaleDateString('ja-JP'):'')+'</span>'
-      : '';
+
     card.innerHTML=
       '<div class="meal-head" onclick="toggleLogCard(\''+cardId+'\')">'
         +'<button class="fav-btn" onclick="event.stopPropagation();toggleFavorite(\''+entry.id+'\')" title="お気に入り">'+(isFav?'⭐':'☆')+'</button>'
         +'<div class="meal-title">'+highlight(entry.name,q)+'</div>'
-        +'<div class="meal-badges">'
-          +(entry.category?'<span class="badge cat">'+esc(entry.category)+'</span>':'')
-          +(entry.calories?'<span class="badge">'+entry.calories+'kcal</span>':'')
-          +(entry.cookTime?'<span class="badge">⏱ '+esc(entry.cookTime)+'</span>':'')
-          +'<span class="badge">📅 '+ds+'</span>'
-        +'</div>'
         +'<span class="chevron" id="chev-'+cardId+'">▼</span>'
       +'</div>'
       +'<div class="meal-body" id="'+cardId+'">'
         +'<div class="meal-inner">'
+          // チップ2行目
+          +'<div style="display:flex;gap:5px;flex-wrap:wrap;margin:10px 0 12px">'
+            +(entry.category?'<span class="badge cat">'+esc(entry.category)+'</span>':'')
+            +(entry.calories?'<span class="badge">🔥 '+entry.calories+'kcal</span>':'')
+            +(entry.cookTime?'<span class="badge">⏱ '+esc(entry.cookTime)+'</span>':'')
+            +'<span class="badge">📅 '+ds+'</span>'
+          +'</div>'
           +(entry.description?'<p class="meal-desc">'+highlight(esc(entry.description),q)+'</p>':'')
           +ingrHtml+stepsHtml
           +'<div class="card-actions">'
-            +(madeLabel?'<div>'+madeLabel+'</div>':'')
             +'<div class="action-row">'
-              +'<button class="action-btn-sm made" onclick="incrementMade(\''+entry.id+'\')">🍳 作った！</button>'
-              +'<button class="action-btn-sm regen" onclick="convertLogFormat(\''+entry.id+'\')">🔄 形式変換</button>'
               +'<button class="action-btn-sm similar" onclick="suggestSimilar(\''+entry.id+'\')">✨ 類似提案</button>'
             +'</div>'
             +delBtn
@@ -731,166 +720,68 @@ function toggleLogCard(cardId){
   var chev=document.getElementById('chev-'+cardId);
   chev.classList.toggle('open',body.classList.toggle('open'));
 }
-function deleteLog(i){var name=logs[i]?logs[i].name:'';logs.splice(i,1);persistLogs();renderLogs();showToast('「'+name+'」を削除しました');}
+
+function deleteLog(i){
+  if(logs[i]&&logs[i].favorite){showToast('⭐ お気に入り中は削除できません','error');return;}
+  var name=logs[i]?logs[i].name:'';
+  logs.splice(i,1);persistLogs();renderLogs();
+  showToast('「'+name+'」を削除しました');
+}
 function clearAllLogs(){
   if(logs.length===0){showToast('ログは空です');return;}
   if(!confirm('全 '+logs.length+' 件のログを削除してよいですか？'))return;
   logs=[];persistLogs();renderLogs();showToast('全ログを削除しました');
 }
 
-/* ===== PLAN PAGE ===== */
-
-
-
-
-
-
-
-
-/* ===== 作った！カウント ===== */
-function incrementMade(logId) {
-  var entry = logs.find(function(l){ return l.id === logId; });
-  if (!entry) return;
-  entry.madeCount = (entry.madeCount || 0) + 1;
-  entry.lastMadeAt = new Date().toISOString();
-  persistLogs();
-  renderLogs();
-  showToast('🍳 「'+entry.name+'」を作った！（'+entry.madeCount+'回目）', 'success');
-}
-
 /* ===== 保存モーダル ===== */
 var _saveModalCallback = null;
 function openSaveModal(mealName, callback) {
-  var desc = document.getElementById('saveModalDesc');
-  desc.innerHTML = '「<span class="save-modal-meal-name">'+esc(mealName)+'</span>」をどのように保存しますか？';
+  document.getElementById('saveModalDesc').innerHTML='「<span class="save-modal-meal-name">'+esc(mealName)+'</span>」をどのように保存しますか？';
   _saveModalCallback = callback;
   document.getElementById('saveModal').classList.remove('hidden');
 }
 function doSaveModal(choice) {
   document.getElementById('saveModal').classList.add('hidden');
-  if (_saveModalCallback) { _saveModalCallback(choice); _saveModalCallback = null; }
-}
-document.addEventListener('DOMContentLoaded', function(){
-  document.getElementById('saveModal').addEventListener('click', function(e){
-    if (e.target === this) doSaveModal('cancel');
-  });
-});
-
-/* ===== データ変換（AIなし） ===== */
-function convertIngrToObject(x) {
-  if (!x) return { name: '', amount: '' };
-  if (typeof x === 'object' && x.name !== undefined) return x;
-  // "豚こま肉 300g" → { name:"豚こま肉", amount:"300g" }
-  var str = String(x).trim();
-  var m = str.match(/^(.+?)\s+([\d\/\.]+\s*[a-zA-Zぁ-ん一-龯々〆〤個本枚枚玉袋缶パックカップ大さじ小さじ少々適量]+.*)$/);
-  if (m) return { name: m[1].trim(), amount: m[2].trim() };
-  return { name: str, amount: '' };
+  if(_saveModalCallback){_saveModalCallback(choice);_saveModalCallback=null;}
 }
 
-function convertLogFormat(logId) {
-  var entry = logs.find(function(l){ return l.id === logId; });
-  if (!entry) return;
-  var converted = Object.assign({}, entry, {
-    ingredients: (entry.ingredients || []).map(convertIngrToObject),
-    ingredientLabels: (entry.ingredients || []).map(function(x){ return ingrLabel(convertIngrToObject(x)); })
-  });
-  openSaveModal(entry.name + '（形式変換）', function(choice) {
-    if (choice === 'cancel') return;
-    if (choice === 'overwrite') {
-      var idx = logs.findIndex(function(l){ return l.id === logId; });
-      logs[idx] = converted;
-      persistLogs(); renderLogs();
-      showToast('データ形式を変換して上書きしました', 'success');
-    } else {
-      converted.id = Date.now()+'_'+Math.random().toString(36).slice(2,6);
-      converted.savedAt = new Date().toISOString();
-      converted.madeCount = 0;
-      logs.unshift(converted);
-      persistLogs(); renderLogs();
-      showToast('変換済みデータを新規保存しました', 'success');
-    }
-  });
-}
-
-/* ===== 類似献立の再提案 ===== */
-var _pendingSimilarMeal = null;
-
+/* ===== 類似提案 ===== */
 async function suggestSimilar(logId) {
-  var entry = logs.find(function(l){ return l.id === logId; });
-  if (!entry) return;
-  if (!keys[provider]) { showApiModal(); return; }
-
+  var entry=logs.find(function(l){return l.id===logId;});
+  if(!entry)return;
+  if(!keys[provider]){showApiModal();return;}
   showToast('🔄 類似献立を考えています…');
-
-  var prompt = 'あなたはプロの栄養士です。以下の献立の類似献立を1品だけ提案してください。'
-    + '\n\n元の献立：\n- 料理名：'+entry.name
-    + '\n- カテゴリ：'+(entry.category||'')
-    + '\n- 材料：'+ingrNames(entry.ingredients).join('、')
-    + '\n- 説明：'+(entry.description||'')
-    + '\n\n「'+entry.name+'」に似た系統だが別の料理を1品提案してください。'
-    + '\n\n必ず以下のJSON形式のみで出力してください（説明文・Markdownコードブロック不要）：'
-    + '\n{"name":"料理名","category":"朝食/昼食/夕食/おやつ","calories":数値,"cookTime":"XX分","description":"2〜3文の説明","ingredients":[{"name":"材料名","amount":"分量"}],"steps":["手順1","手順2"]}';
-
+  var ingrList=(entry.ingredients||[]).map(function(x){return String(x);}).join('、');
+  var prompt='あなたはプロの栄養士です。以下の献立の類似献立を1品だけ提案してください。\n\n元の献立：\n- 料理名：'+entry.name+'\n- カテゴリ：'+(entry.category||'')+'\n- 材料：'+ingrList+'\n- 説明：'+(entry.description||'')+'\n\n「'+entry.name+'」に似た系統だが別の料理を1品提案してください。\n\n必ず以下のJSON形式のみで出力してください（説明文・Markdownコードブロック不要）：\n{"name":"料理名","category":"朝食/昼食/夕食/おやつ","calories":数値,"cookTime":"XX分","description":"2〜3文の説明","ingredients":["材料1","材料2"],"steps":["手順1","手順2"]}';
   try {
-    var rawText = provider === 'gemini' ? await callGemini(prompt) : await callAnthropic(prompt);
-    var clean = rawText.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
-    var meal = JSON.parse(clean);
-    if (!meal.name) throw new Error('提案が取得できませんでした');
-
-    _pendingSimilarMeal = meal;
-    openSaveModal('類似提案：' + meal.name, function(choice) {
-      if (choice === 'cancel') { _pendingSimilarMeal = null; return; }
-      var newEntry = {
-        id: Date.now()+'_'+Math.random().toString(36).slice(2,6),
-        mealRef: makeMealRef(meal),
-        name: meal.name, category: meal.category||'', calories: meal.calories||'',
-        cookTime: meal.cookTime||'', description: meal.description||'',
-        ingredients: meal.ingredients||[], steps: meal.steps||[],
-        savedAt: new Date().toISOString(), madeCount: 0
+    var rawText=provider==='gemini'?await callGemini(prompt):await callAnthropic(prompt);
+    var clean=rawText.replace(/```json\s*/g,'').replace(/```\s*/g,'').trim();
+    var meal=JSON.parse(clean);
+    if(!meal.name)throw new Error('提案が取得できませんでした');
+    openSaveModal('類似提案：'+meal.name, function(choice){
+      if(choice==='cancel')return;
+      var newEntry={
+        id:Date.now()+'_'+Math.random().toString(36).slice(2,6),
+        mealRef:makeMealRef(meal),name:meal.name,category:meal.category||'',
+        calories:meal.calories||'',cookTime:meal.cookTime||'',description:meal.description||'',
+        ingredients:meal.ingredients||[],steps:meal.steps||[],
+        savedAt:new Date().toISOString()
       };
-      if (choice === 'overwrite') {
-        var idx = logs.findIndex(function(l){ return l.id === logId; });
-        newEntry.id = logId;
-        newEntry.savedAt = entry.savedAt;
-        newEntry.favorite = entry.favorite;
-        newEntry.madeCount = entry.madeCount || 0;
-        logs[idx] = newEntry;
-        showToast('「'+meal.name+'」で上書き保存しました', 'success');
+      if(choice==='overwrite'){
+        var idx=logs.findIndex(function(l){return l.id===logId;});
+        newEntry.id=logId;newEntry.savedAt=entry.savedAt;newEntry.favorite=entry.favorite;
+        logs[idx]=newEntry;
+        showToast('「'+meal.name+'」で上書き保存しました','success');
       } else {
         logs.unshift(newEntry);
-        showToast('「'+meal.name+'」を新規保存しました', 'success');
+        showToast('「'+meal.name+'」を新規保存しました','success');
       }
-      persistLogs(); renderLogs();
-      _pendingSimilarMeal = null;
+      persistLogs();renderLogs();
     });
-  } catch(e) {
-    showToast('類似提案エラー：'+e.message, 'error');
-  }
+  } catch(e){showToast('類似提案エラー：'+e.message,'error');}
 }
 
-
-/* ===== 除外食材メモリー ===== */
-function loadExcludeMemo() {
-  var memo = localStorage.getItem('menuExcludeMemo') || '';
-  if (memo) {
-    document.getElementById('exclude').value = memo;
-    document.getElementById('excludeMemoBadge').textContent = '記憶済み';
-  }
-}
-function saveExcludeMemo() {
-  var val = document.getElementById('exclude').value.trim();
-  if (!val) { showToast('除外食材を入力してから記憶してください'); return; }
-  localStorage.setItem('menuExcludeMemo', val);
-  document.getElementById('excludeMemoBadge').textContent = '記憶済み';
-  showToast('除外食材を記憶しました', 'success');
-}
-function clearExcludeMemo() {
-  localStorage.removeItem('menuExcludeMemo');
-  document.getElementById('exclude').value = '';
-  document.getElementById('excludeMemoBadge').textContent = '';
-  showToast('除外食材の記憶を削除しました');
-}
-
+/* ===== EXPORT JSON ===== */
 function exportJson(){
   if(logs.length===0){showToast('エクスポートするログがありません');return;}
   var blob=new Blob([JSON.stringify(logs,null,2)],{type:'application/json;charset=utf-8'});
@@ -905,16 +796,16 @@ function exportLogs(){
   if(logs.length===0){showToast('エクスポートするログがありません');return;}
   var items=logs.map(function(e){
     var d=new Date(e.savedAt);var ds=d.getFullYear()+'/'+(String(d.getMonth()+1).padStart(2,'0'))+'/'+String(d.getDate()).padStart(2,'0');
-    return '<div class="entry"><div class="entry-head"><span class="ename">'+esc(e.name)+'</span><span class="emeta">'+[e.category,e.calories?e.calories+'kcal':'',e.cookTime].filter(Boolean).join(' ｜ ')+'</span><span class="edate">'+ds+'</span></div>'+(e.description?'<p class="edesc">'+esc(e.description)+'</p>':'')+(e.ingredients&&e.ingredients.length?'<div class="eingr">🥕 '+e.ingredients.map(function(x){return esc(x);}).join('、')+'</div>':'')+'</div>';
+    return '<div class="entry"><div class="entry-head"><span class="ename">'+esc(e.name)+'</span><span class="emeta">'+[e.category,e.calories?e.calories+'kcal':'',e.cookTime].filter(Boolean).join(' ｜ ')+'</span><span class="edate">'+ds+'</span></div>'+(e.description?'<p class="edesc">'+esc(e.description)+'</p>':'')+(e.ingredients&&e.ingredients.length?'<div class="eingr">🥕 '+e.ingredients.map(function(x){return esc(String(x));}).join('、')+'</div>':'')+'</div>';
   }).join('\n');
   var html='<!DOCTYPE html>\n<html lang="ja">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>献立ログ</title>\n<style>\nbody{font-family:"Noto Sans JP",sans-serif;background:#faf6f0;color:#2c1a0e;max-width:680px;margin:0 auto;padding:20px 16px}\nh1{font-family:"Noto Serif JP",serif;font-size:22px;color:#5c3d2e;margin-bottom:4px}\n.subtitle{font-size:13px;color:#9e7055;margin-bottom:24px}\n.entry{background:#fff9f2;border:1.5px solid #e0cdb4;border-radius:12px;padding:15px 17px;margin-bottom:11px}\n.entry-head{display:flex;flex-wrap:wrap;gap:7px;align-items:baseline;margin-bottom:7px}\n.ename{font-size:17px;font-weight:700;color:#5c3d2e;font-family:"Noto Serif JP",serif}\n.emeta{font-size:12px;color:#9e7055}\n.edate{font-size:12px;color:#b07d54;margin-left:auto}\n.edesc{font-size:13px;color:#6b4535;line-height:1.75;margin:0 0 7px}\n.eingr{font-size:12px;color:#9e7055}\n</style>\n</head>\n<body>\n<h1>🍱 献立ログ</h1>\n<p class="subtitle">エクスポート日：'+new Date().toLocaleDateString('ja-JP')+' ｜ '+logs.length+'件</p>\n<!--MENUAPP_LOG_JSON\n'+JSON.stringify(logs,null,2)+'\nEND_MENUAPP_LOG_JSON-->\n'+items+'\n</body>\n</html>';
   var blob=new Blob([html],{type:'text/html;charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');
   a.href=url;a.download='献立ログ_'+new Date().toISOString().slice(0,10)+'.html';
   document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
-  showToast(logs.length+'件をエクスポートしました','success');
+  showToast(logs.length+'件をHTMLエクスポートしました','success');
 }
 
-/* ===== IMPORT ===== */
+/* ===== IMPORT (HTML + JSON両対応) ===== */
 function triggerImport(){document.getElementById('importInput').click();}
 function handleImport(input){
   var file=input.files[0];if(!file)return;
@@ -922,15 +813,23 @@ function handleImport(input){
   reader.onload=function(e){
     try{
       var text=e.target.result;
-      var match=text.match(/<!--MENUAPP_LOG_JSON\n([\s\S]*?)\nEND_MENUAPP_LOG_JSON-->/);
-      if(!match)throw new Error('有効な献立ログHTMLファイルではありません');
-      var imported=JSON.parse(match[1].trim());
+      var imported=null;
+      // JSON直接読み込み
+      if(file.name.endsWith('.json')){
+        imported=JSON.parse(text);
+      } else {
+        // HTMLからJSONを抽出
+        var match=text.match(/<!--MENUAPP_LOG_JSON\n([\s\S]*?)\nEND_MENUAPP_LOG_JSON-->/);
+        if(!match)throw new Error('有効な献立ログHTMLファイルではありません');
+        imported=JSON.parse(match[1].trim());
+      }
       if(!Array.isArray(imported))throw new Error('データ形式が不正です');
       var existIds=new Set(logs.map(function(l){return l.id;}));
       var added=0;
       imported.forEach(function(entry){if(!existIds.has(entry.id)){logs.push(entry);added++;}});
       logs.sort(function(a,b){return new Date(b.savedAt)-new Date(a.savedAt);});
-      persistLogs();renderLogs();showToast(added+'件をインポートしました（重複除外済み）','success');
+      persistLogs();renderLogs();
+      showToast(added+'件をインポートしました（重複除外済み）','success');
     }catch(err){showToast('インポート失敗: '+err.message,'error');}
     input.value='';
   };
@@ -938,41 +837,18 @@ function handleImport(input){
 }
 
 /* ===== TOAST ===== */
-var toastTimer = null;
-function showToast(msg, type) {
-  var el = document.getElementById('toast');
+var toastTimer=null;
+function showToast(msg,type){
+  var el=document.getElementById('toast');
   clearTimeout(toastTimer);
-  // 一度非表示にしてアニメーションをリセット
   el.classList.remove('visible');
-  el.textContent = msg;
-  el.className = 'toast' + (type ? ' ' + type : '');
-  // reflow を強制してトランジションを再発火
+  el.textContent=msg;el.className='toast'+(type?' '+type:'');
   void el.offsetWidth;
   el.classList.add('visible');
-  var duration = type === 'error' ? 8000 : 3200;
-  toastTimer = setTimeout(function() {
-    el.classList.remove('visible');
-    toastTimer = null;
-  }, duration);
+  toastTimer=setTimeout(function(){el.classList.remove('visible');toastTimer=null;},type==='error'?8000:3200);
 }
 
-/* ===== INGREDIENT HELPERS ===== */
-// 旧形式（文字列）・新形式（オブジェクト）どちらでも name を返す
-function ingrName(x) {
-  if (!x) return '';
-  if (typeof x === 'string') return x;
-  return x.name || '';
-}
-// 表示用: "豚こま肉 300g" または "豚こま肉" のように返す
-function ingrLabel(x) {
-  if (!x) return '';
-  if (typeof x === 'string') return x;
-  return x.amount ? x.name + ' ' + x.amount : x.name;
-}
-// ingredients 配列から name だけの配列を返す（計画・プロンプト用）
-function ingrNames(arr) {
-  return (arr || []).map(ingrName).filter(Boolean);
-}
+/* ===== UTIL ===== */
 function esc(str){if(!str)return'';return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
 init();
