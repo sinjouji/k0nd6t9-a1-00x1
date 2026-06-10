@@ -93,11 +93,6 @@ textarea{resize:none}
 .suggest-btn:active{transform:scale(.98);background:var(--br3)}
 .suggest-btn:disabled{opacity:.5;transform:none;cursor:not-allowed}
 
-/* 在庫エリア */
-.inventory-panel{background:var(--cream);border-radius:var(--rs);padding:10px 13px;margin-top:10px}
-.inventory-scroll{max-height:100px;overflow-y:auto;margin-top:6px}
-.inventory-chips{display:flex;flex-wrap:wrap;gap:5px}
-.inv-chip{font-size:12px;padding:3px 9px;background:#fff;border:1px solid var(--border);border-radius:14px;color:var(--txm)}
 .inventory-none{font-size:13px;color:var(--txl)}
 
 /* ===== RESULT ===== */
@@ -201,13 +196,6 @@ mark{background:#ffe08a;color:var(--br1);border-radius:2px;padding:0 1px}
 .save-modal-btn.newlog:hover{background:var(--br6)}
 .save-modal-btn.cancel{background:transparent;color:var(--txl);border:1.5px solid var(--border)}
 .save-modal-btn.cancel:hover{background:var(--cream)}
-
-/* ===== PLAN PAGE ===== */
-.plan-section{padding:16px;border-bottom:1.5px solid var(--border)}
-.plan-section-title{font-family:var(--serif);font-size:15px;font-weight:700;color:var(--br2);margin-bottom:12px;display:flex;align-items:center;gap:7px}
-
-
-
 
 
 /* ===== TOAST ===== */
@@ -480,7 +468,6 @@ function switchTab(tab) {
     document.getElementById('page-'+t).classList.toggle('active', t===tab);
   });
   if (tab==='log') renderLogs();
-  
 }
 
 /* ===== FORM TOGGLE ===== */
@@ -525,7 +512,6 @@ function buildPrompt() {
 
 
   return 'あなたはプロの栄養士です。以下の条件で本日の献立を3〜5品提案してください。\n\n【条件】\n- 目標カロリー: '+calorie+'\n'
-    +(inv.length?'- 現在の在庫食材: '+inv.join('、')+'\n':'')
     +(priority?'- 優先して使いたい食材: '+priority+'\n':'')
     +(exclude?'- 除外・アレルギー: '+exclude+'\n':'')
     +(mood?'- 気分・希望: '+mood+'\n':'')
@@ -636,7 +622,6 @@ function toggleLogFavFilter(){
   document.getElementById('logFavFilter').classList.toggle('active',logFavOnly);
   renderLogs();
 }
-
 function toggleFavorite(id){
   var entry=logs.find(function(l){return l.id===id;});
   if(!entry)return;
@@ -754,14 +739,6 @@ function clearAllLogs(){
 }
 
 /* ===== PLAN PAGE ===== */
-
-
-
-
-
-
-
-
 
 
 
