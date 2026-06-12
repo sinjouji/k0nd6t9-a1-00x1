@@ -263,15 +263,19 @@ textarea{resize:vertical;min-height:72px;}
 .bulk-empty{text-align:center;padding:32px 0;color:var(--br3);font-size:14px;}
 .bulk-foot{margin-top:14px;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
 .bulk-added-count{font-size:13px;color:var(--br3);flex:1;}
-/* JSON入力パネル */
-.bulk-json-panel{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;}
-.bulk-json-label{font-size:12px;font-weight:700;color:var(--br3);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
-.bulk-json-textarea{width:100%;min-height:88px;max-height:160px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--br2);background:#fff;resize:vertical;outline:none;}
-.bulk-json-textarea:focus{border-color:var(--br3);}
-.bulk-json-textarea.error{border-color:var(--red);}
-.bulk-json-err{font-size:11px;color:var(--red);margin-top:4px;min-height:14px;}
-.bulk-json-actions{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;}
-.bulk-json-hint{font-size:11px;color:var(--br4);flex:1;}
+/* ===== PROMPT MODAL ===== */
+.prompt-modal .modal-body{display:flex;flex-direction:column;gap:0;}
+.prompt-textarea{width:100%;flex:1;min-height:260px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-family:monospace;line-height:1.6;color:var(--br2);background:#fafaf8;resize:none;outline:none;}
+.prompt-textarea:focus{border-color:var(--br3);}
+.prompt-copy-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--br1);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:.02em;}
+.prompt-copy-btn:active{opacity:.8;}
+.prompt-copy-btn.copied{background:var(--owned);}
+/* シリーズ編集：AIプロンプト設定セクション */
+.edit-section-toggle{width:100%;display:flex;align-items:center;gap:8px;background:var(--bg2);border:none;border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-weight:700;color:var(--br3);cursor:pointer;margin-bottom:6px;text-align:left;}
+.edit-section-toggle:active{opacity:.7;}
+.edit-section-toggle .toggle-arrow{margin-left:auto;font-size:11px;}
+.edit-section-body{display:none;}
+.edit-section-body.open{display:block;}
 </style>
 </head>
 <body>
@@ -555,9 +559,10 @@ ${groupMemo}
       ${memoSection}
     </div>
     ${missHTML}
-    <div style="padding:10px 12px 4px;display:flex;gap:8px;align-items:center;">
+    <div style="padding:10px 12px 4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
       <button class="btn btn-ghost btn-sm" onclick="addGroupModal('${s.id}')">＋ グループ追加</button>
       <button class="btn btn-ghost btn-sm" onclick="openBulkCandidateModal('${s.id}')" style="border-color:var(--br3);color:var(--br2);">📋 候補から追加</button>
+      <button class="btn btn-ghost btn-sm" onclick="openPromptModal('${s.id}')" style="border-color:#7a5800;color:#7a5800;">🤖 JSON依頼文を作成</button>
     </div>
     ${groupsHTML}
     ${allGroups.length===0
@@ -703,6 +708,7 @@ function saveSeries(){
 function editSeries(sid){
   const s=db.series.find(x=>x.id===sid);
   if(!s)return;
+  const ai=s.ai||{};
   const ov=openModal(`
     <div class="modal-head">
       <span class="modal-title">シリーズを編集</span>
@@ -710,7 +716,19 @@ function editSeries(sid){
     </div>
     <div class="modal-body">
       <div class="form-group"><label>シリーズ名</label><input type="text" id="es_name" value="${esc(s.name)}"></div>
-      <div class="form-group"><label>メモ</label><textarea id="es_memo">${esc(s.memo)}</textarea></div>
+      <div class="form-group"><label>メモ</label><textarea id="es_memo" style="min-height:56px">${esc(s.memo)}</textarea></div>
+      <button class="edit-section-toggle" onclick="_toggleEditSection(this)" type="button">
+        🤖 JSON依頼文の設定 <span class="toggle-arrow">▾</span>
+      </button>
+      <div class="edit-section-body" id="editAiSection">
+        <div class="form-group"><label>出版社 (publisher)</label><input type="text" id="es_publisher" value="${esc(ai.publisher||'')}" placeholder="例：KADOKAWA"></div>
+        <div class="form-group"><label>レーベル (label)</label><input type="text" id="es_label" value="${esc(ai.label||'')}" placeholder="例：角川つばさ文庫"></div>
+        <div class="form-group"><label>参照URL（1行1件）</label><textarea id="es_sourceUrls" style="min-height:64px;font-size:12px;font-family:monospace" placeholder="https://example.com/list">${esc((ai.sourceUrls||[]).join('\n'))}</textarea></div>
+        <div class="form-group"><label>含めるもの (includeRules)</label><textarea id="es_includeRules" style="min-height:56px" placeholder="例：小説のみ">${esc(ai.includeRules||'')}</textarea></div>
+        <div class="form-group"><label>除外するもの (excludeRules)</label><textarea id="es_excludeRules" style="min-height:56px" placeholder="例：漫画版・スピンオフ">${esc(ai.excludeRules||'')}</textarea></div>
+        <div class="form-group"><label>タイトル整形 (titleCleanup)</label><input type="text" id="es_titleCleanup" value="${esc(ai.titleCleanup||'')}" placeholder='例：星のカービィ '></div>
+        <div class="form-group"><label>備考 (promptMemo)</label><textarea id="es_promptMemo" style="min-height:56px" placeholder="AIへの補足メモ">${esc(ai.promptMemo||'')}</textarea></div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="deleteSeries('${sid}')">削除</button>
@@ -718,11 +736,29 @@ function editSeries(sid){
     </div>
   `);
 }
+function _toggleEditSection(btn){
+  const body=document.getElementById('editAiSection');
+  const arrow=btn.querySelector('.toggle-arrow');
+  const open=body.classList.toggle('open');
+  arrow.textContent=open?'▴':'▾';
+}
 function updateSeries(sid){
   const s=db.series.find(x=>x.id===sid);if(!s)return;
   const name=document.getElementById('es_name').value.trim();
   if(!name){alert('シリーズ名は必須です');return;}
-  s.name=name;s.memo=document.getElementById('es_memo').value;
+  s.name=name;
+  s.memo=document.getElementById('es_memo').value;
+  // AI設定フィールド（任意）
+  const rawUrls=(document.getElementById('es_sourceUrls')?.value||'').split('\n').map(u=>u.trim()).filter(Boolean);
+  s.ai={
+    publisher: document.getElementById('es_publisher')?.value.trim()||'',
+    label:     document.getElementById('es_label')?.value.trim()||'',
+    sourceUrls: rawUrls,
+    includeRules: document.getElementById('es_includeRules')?.value.trim()||'',
+    excludeRules: document.getElementById('es_excludeRules')?.value.trim()||'',
+    titleCleanup: document.getElementById('es_titleCleanup')?.value.trim()||'',
+    promptMemo:   document.getElementById('es_promptMemo')?.value.trim()||'',
+  };
   saveDB();closeModal();renderDetail();showToast('保存しました');
 }
 function deleteSeries(sid){
@@ -730,6 +766,132 @@ function deleteSeries(sid){
     db.series=db.series.filter(x=>x.id!==sid);
     saveDB();closeModal();goHome();showToast('削除しました');
   });
+}
+
+// ===== PROMPT MODAL =====
+function openPromptModal(sid){
+  const s=db.series.find(x=>x.id===sid);
+  if(!s)return;
+  const ai=s.ai||{};
+
+  // ── テンプレート生成 ──
+  const lines=[];
+
+  lines.push('以下のURLを参照して、書籍一覧をJSON形式で出力してください。');
+  lines.push('');
+
+  // 参照URL
+  const urls=(ai.sourceUrls||[]).filter(Boolean);
+  lines.push('参照URL：');
+  if(urls.length>0){
+    urls.forEach(u=>lines.push(u));
+  } else {
+    lines.push('（URLを設定してください）');
+  }
+  lines.push('');
+
+  // 対象
+  lines.push('対象：');
+  lines.push('シリーズ名：'+s.name);
+  if(ai.publisher) lines.push('出版社：'+ai.publisher);
+  if(ai.label)     lines.push('レーベル：'+ai.label);
+  lines.push('');
+
+  // 含めるもの
+  if(ai.includeRules){
+    lines.push('含めるもの：');
+    lines.push(ai.includeRules);
+    lines.push('');
+  }
+
+  // 除外するもの
+  if(ai.excludeRules){
+    lines.push('除外するもの：');
+    lines.push(ai.excludeRules);
+    lines.push('');
+  }
+
+  // タイトル整形
+  if(ai.titleCleanup){
+    lines.push('タイトル整形：');
+    lines.push('title から「'+ai.titleCleanup+'」を削除してください。');
+    lines.push('');
+  }
+
+  // 備考
+  if(ai.promptMemo){
+    lines.push('備考：');
+    lines.push(ai.promptMemo);
+    lines.push('');
+  }
+
+  // 出力形式
+  lines.push('出力形式：');
+  lines.push('');
+  lines.push('[');
+  lines.push('  {');
+  lines.push('    "title": "",');
+  lines.push('    "displayNum": "",');
+  lines.push('    "publisher": "'+(ai.publisher||'')+'",');
+  lines.push('    "label": "'+(ai.label||'')+'",');
+  lines.push('    "publishedDate": "",');
+  lines.push('    "confidence": "high",');
+  lines.push('    "reason": "公式一覧ページ掲載"');
+  lines.push('  }');
+  lines.push(']');
+  lines.push('');
+
+  // ルール
+  lines.push('ルール：');
+  lines.push('- 発売日順');
+  lines.push('- 最も古い作品を1として採番');
+  lines.push('- displayNumを付与');
+  lines.push('- JSONのみ出力');
+  lines.push('- 説明文不要');
+  lines.push('- Markdown不要');
+  lines.push('- コードブロック不要');
+
+  const promptText=lines.join('\n');
+
+  // ── モーダル表示 ──
+  const ov=openModal(`
+    <div class="modal-head">
+      <div style="flex:1;min-width:0;">
+        <div class="modal-title">🤖 JSON依頼文</div>
+        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${esc(s.name)}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;">
+      <textarea class="prompt-textarea" id="promptText" readonly></textarea>
+      <button class="prompt-copy-btn" id="promptCopyBtn" onclick="_copyPrompt()">
+        📋 全文コピー
+      </button>
+    </div>
+  `);
+  ov.querySelector('.modal').classList.add('prompt-modal');
+  // textareaにセット（innerHTML経由を避けてXSSを防ぐ）
+  document.getElementById('promptText').value=promptText;
+}
+
+function _copyPrompt(){
+  const ta=document.getElementById('promptText');
+  if(!ta)return;
+  // Clipboard API → fallback
+  const btn=document.getElementById('promptCopyBtn');
+  const doSuccess=()=>{
+    if(btn){btn.textContent='✅ コピーしました';btn.classList.add('copied');}
+    setTimeout(()=>{
+      if(btn){btn.textContent='📋 全文コピー';btn.classList.remove('copied');}
+    },2000);
+  };
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(ta.value).then(doSuccess).catch(()=>{
+      ta.select();document.execCommand('copy');doSuccess();
+    });
+  } else {
+    ta.select();document.execCommand('copy');doSuccess();
+  }
 }
 
 // ===== ADD / EDIT GROUP =====
@@ -883,17 +1045,13 @@ function saveNewBook(sid){
     : 0;
 
   books.push({
-  id: Date.now().toString(),
-  title: c.title,
-  displayNum: c.displayNum,
-  owned: false,
-  memo: '',
-  order: 0,
-
-  publisher: c.publisher || '',
-  label: c.label || '',
-  publishedDate: c.publishedDate || ''
-});
+    id: genId(),
+    title,
+    displayNum,
+    owned,
+    memo,
+    order: orderInput ? parseFloat(orderInput) || maxOrder + 1 : maxOrder + 1
+  });
 
   saveDB();
   closeModal();
@@ -1271,42 +1429,19 @@ function openBulkCandidateModal(sid, candidates){
   ov.appendChild(modalEl);
   document.body.appendChild(ov);
   modalStack.push(ov);
-  // テキストエリアにサンプルJSONを流し込んで初期表示
-  setTimeout(() => {
-    const ta = document.getElementById('bulkJsonInput');
-    if(ta){
-      ta.value = JSON.stringify(bulkCandidates, null, 2);
-    }
-  }, 0);
   _renderBulkList(existingTitles);
 }
 
-function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
+function _buildBulkModalHTML(sid, groupOptions, isSample){
+  // sid をdata属性に持たせてonclick内のクォート問題を回避
   const el = document.createElement('div');
   el.innerHTML = `
     <div class="modal-head">
-      <div style="flex:1;min-width:0;">
-        <div class="modal-title">📋 候補から一括追加</div>
-        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${searchLabel || ''}</div>
-      </div>
+      <span class="modal-title">📋 候補から一括追加</span>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
+    ${isSample ? `<div style="background:#fff3cd;color:#7a5800;font-size:12px;padding:6px 14px;border-radius:8px;margin-bottom:10px;">⚠️ サンプルデータを表示しています。API連携後は実データに切り替わります。</div>` : ''}
     <div class="modal-body">
-      <div class="bulk-json-panel">
-        <div class="bulk-json-label">
-          📄 候補JSON
-          ${isSample ? '<span style="background:#fff3cd;color:#7a5800;padding:1px 8px;border-radius:10px;font-weight:400;">サンプル表示中</span>' : ''}
-        </div>
-        <textarea class="bulk-json-textarea" id="bulkJsonInput"
-          placeholder='[{"title":"書名","displayNum":"1巻","publisher":"出版社","label":"レーベル","confidence":"high"}]'
-          oninput="_onBulkJsonInput(this)"></textarea>
-        <div class="bulk-json-err" id="bulkJsonErr"></div>
-        <div class="bulk-json-actions">
-          <span class="bulk-json-hint">JSONを貼り付けると候補一覧が更新されます</span>
-          <button class="btn btn-ghost btn-sm" onclick="_loadSampleCandidates()">サンプルを読む</button>
-          <button class="btn btn-ghost btn-sm" onclick="_clearBulkJson()">クリア</button>
-        </div>
-      </div>
       <div class="bulk-target-bar">
         <span class="bulk-target-label">追加先：</span>
         <select id="bulk_group" onchange="_refreshBulkSelCount()">${groupOptions}</select>
@@ -1324,117 +1459,9 @@ function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
       <button class="btn btn-primary" id="bulkAddBtn">まとめて追加</button>
     </div>
   `;
+  // bulkAddBtn に sid をdata属性で渡してイベント登録
   el.querySelector('#bulkAddBtn').addEventListener('click', function(){ _executeBulkAdd(sid); });
   return el;
-}
-
-// ── JSON入力ハンドラ ──
-
-// テキストエリア入力のたびにパース→候補更新
-function _onBulkJsonInput(ta){
-  const raw = ta.value.trim();
-  const errEl = document.getElementById('bulkJsonErr');
-  const addedMsg = document.getElementById('bulkAddedMsg');
-  if(addedMsg) addedMsg.textContent = '';
-
-  if(!raw){
-    // 空にしたら候補もクリア
-    ta.classList.remove('error');
-    if(errEl) errEl.textContent = '';
-    bulkCandidates = [];
-    bulkChecked = new Set();
-    _renderBulkList();
-    return;
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch(e) {
-    ta.classList.add('error');
-    if(errEl) errEl.textContent = '⚠ JSONの形式が正しくありません：' + e.message;
-    return;
-  }
-
-  // 配列でなければラップ
-  if(!Array.isArray(parsed)) parsed = [parsed];
-
-  // 必須フィールドチェック
-  const invalid = parsed.filter(c => !c.title);
-  if(invalid.length > 0){
-    ta.classList.add('error');
-    if(errEl) errEl.textContent = '⚠ title フィールドのないデータが ' + invalid.length + ' 件あります';
-    return;
-  }
-
-  ta.classList.remove('error');
-  if(errEl) errEl.textContent = '';
-
-  // 発売日順にソートして候補を更新
-  bulkCandidates = parsed.slice().sort((a, b) =>
-    (a.publishedDate || '').localeCompare(b.publishedDate || '')
-  );
-
-  // 重複チェックしてチェック状態を再計算
-  const s = db.series.find(x => x.id === currentSeriesId);
-  const existingTitles = new Set();
-  if(s){
-    (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
-    s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
-  }
-  bulkChecked = new Set();
-  bulkCandidates.forEach((c, i) => {
-    const dup = existingTitles.has(c.title.trim());
-    if(!dup && (c.confidence === 'high' || c.confidence === 'medium')){
-      bulkChecked.add(i);
-    }
-  });
-
-  _renderBulkList(existingTitles);
-}
-
-// 「サンプルを読む」ボタン：現在のシリーズ・グループのサンプルを流し込む
-function _loadSampleCandidates(){
-  const s = db.series.find(x => x.id === currentSeriesId);
-  if(!s) return;
-  const gsel = document.getElementById('bulk_group');
-  const gid = gsel ? gsel.value : null;
-  const grp = gid && gid !== '__default' ? s.groups.find(g => g.id === gid) : null;
-  const sample = _getSampleCandidates(s.name, grp ? grp.name : null);
-  const ta = document.getElementById('bulkJsonInput');
-  if(ta){
-    ta.value = JSON.stringify(sample, null, 2);
-    ta.classList.remove('error');
-    const errEl = document.getElementById('bulkJsonErr');
-    if(errEl) errEl.textContent = '';
-  }
-  // サンプルをそのまま候補に反映
-  bulkCandidates = sample.slice().sort((a, b) =>
-    (a.publishedDate || '').localeCompare(b.publishedDate || '')
-  );
-  const existingTitles = new Set();
-  (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
-  s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
-  bulkChecked = new Set();
-  bulkCandidates.forEach((c, i) => {
-    if(!existingTitles.has(c.title.trim()) && (c.confidence === 'high' || c.confidence === 'medium')){
-      bulkChecked.add(i);
-    }
-  });
-  _renderBulkList(existingTitles);
-}
-
-// テキストエリアをクリアして候補もリセット
-function _clearBulkJson(){
-  const ta = document.getElementById('bulkJsonInput');
-  if(ta){ ta.value = ''; ta.classList.remove('error'); }
-  const errEl = document.getElementById('bulkJsonErr');
-  if(errEl) errEl.textContent = '';
-  const addedMsg = document.getElementById('bulkAddedMsg');
-  if(addedMsg) addedMsg.textContent = '';
-  bulkCandidates = [];
-  bulkChecked = new Set();
-  _renderBulkList();
 }
 
 function _renderBulkList(existingTitles){
@@ -1524,18 +1551,7 @@ function _executeBulkAdd(sid){
   }
   const toAdd = [...bulkChecked].sort((a,b) => a - b).map(i => bulkCandidates[i]);
   toAdd.forEach(c => {
-    books.push({
-  id: genId(),
-  title: c.title,
-  displayNum: c.displayNum || '',
-  owned: false,
-  memo: '',
-  order: 0,
-
-  publisher: c.publisher || '',
-  label: c.label || '',
-  publishedDate: c.publishedDate || ''
-});
+    books.push({id: genId(), title: c.title, displayNum: c.displayNum || '', owned: false, memo: '', order: 0});
   });
   saveDB();
   const msg = document.getElementById('bulkAddedMsg');
