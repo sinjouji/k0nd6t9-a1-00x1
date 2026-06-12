@@ -510,6 +510,7 @@ const groupHeader = `
       ? `<button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ編集">✏️</button>`
       : ''
     }
+    <button class="btn-icon" onclick="openBulkCandidateModal('${s.id}',null,'${g.id}')" title="候補から追加" style="font-size:16px;">📋</button>
   </div>
 `;
 
@@ -548,7 +549,7 @@ ${groupMemo}
     ${missHTML}
     <div style="padding:10px 12px 4px;display:flex;gap:8px;align-items:center;">
       <button class="btn btn-ghost btn-sm" onclick="addGroupModal('${s.id}')">＋ グループ追加</button>
-      <button class="btn btn-ghost btn-sm" onclick="openBulkCandidateModal('${s.id}')" style="border-color:var(--br3);color:var(--br2);">📋 候補から追加</button>
+      <button class="btn btn-ghost btn-sm" onclick="openBulkCandidateModal('${s.id}',null,null)" style="border-color:var(--br3);color:var(--br2);">📋 シリーズ全体から追加</button>
     </div>
     ${groupsHTML}
     ${allGroups.length===0
@@ -1195,38 +1196,82 @@ const SAMPLE_CANDIDATES_BY_SERIES = {
     // publisher未取得 → low
     {title:'カービィのすいこみ大作戦',                   displayNum:'',    publisher:'',       label:'',                    publishedDate:'2023-03-17', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
   ],
+
+  // ── グループ別サンプル（シリーズ名\tグループ名 をキーに使用） ──
+  // 星のカービィ × 角川つばさ文庫
+  '星のカービィ	角川つばさ文庫': [
+    {title:'星のカービィ　ロボボプラネット（上）',   displayNum:'上巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2016-07-15', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:'星のカービィ　ロボボプラネット（下）',   displayNum:'下巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2016-09-15', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:'星のカービィ　スターアライズ',           displayNum:'',     publisher:'KADOKAWA', label:'',              publishedDate:'2018-11-15', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
+    {title:'星のカービィ　ディスカバリー',           displayNum:'',     publisher:'',         label:'',              publishedDate:'2022-09-15', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
+  ],
+  // かいけつゾロリ × 角川つばさ文庫
+  'かいけつゾロリ	角川つばさ文庫': [
+    {title:'かいけつゾロリ　なぞのスパイ大作せん', displayNum:'1巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2013-04-10', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:'かいけつゾロリ　まほうつかいのでし',   displayNum:'2巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2013-08-10', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:'かいけつゾロリ　おばけのきょうかしょ', displayNum:'3巻', publisher:'KADOKAWA', label:'',              publishedDate:'2014-01-10', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
+    {title:'かいけつゾロリ　ゾロリのうちゅうたんけん',displayNum:'4巻',publisher:'',        label:'',              publishedDate:'2014-07-10', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
+  ],
+  // サバイバルシリーズ × 朝日新聞出版（別グループ想定）
+  'サバイバルシリーズ	科学漫画': [
+    {title:'科学漫画サバイバル　山火事のサバイバル', displayNum:'1巻', publisher:'朝日新聞出版', label:'かがくるBOOK', publishedDate:'2019-03-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:'科学漫画サバイバル　大洪水のサバイバル', displayNum:'2巻', publisher:'朝日新聞出版', label:'かがくるBOOK', publishedDate:'2019-08-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:'科学漫画サバイバル　人体のサバイバル',   displayNum:'3巻', publisher:'朝日新聞出版', label:'',             publishedDate:'2020-02-01', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
+    {title:'科学漫画サバイバル　ウイルスのサバイバル',displayNum:'4巻', publisher:'',             label:'',             publishedDate:'2020-09-01', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
+  ],
 };
 
-// シリーズ名に対応するサンプルを返す。一致しない場合は汎用サンプルを返す
-function _getSampleCandidates(seriesName){
-  // 完全一致
+// シリーズ名・グループ名に対応するサンプルを返す
+// groupName が指定されれば「シリーズ名\tグループ名」を優先検索
+function _getSampleCandidates(seriesName, groupName){
+  // 1. グループ名あり → 「シリーズ名\tグループ名」完全一致
+  if(groupName){
+    const groupKey = seriesName + '\t' + groupName;
+    if(SAMPLE_CANDIDATES_BY_SERIES[groupKey]) return SAMPLE_CANDIDATES_BY_SERIES[groupKey];
+    // グループ名部分一致
+    for(const key of Object.keys(SAMPLE_CANDIDATES_BY_SERIES)){
+      if(key.includes('\t') && key.startsWith(seriesName) && key.includes(groupName)){
+        return SAMPLE_CANDIDATES_BY_SERIES[key];
+      }
+    }
+  }
+  // 2. シリーズ名完全一致
   if(SAMPLE_CANDIDATES_BY_SERIES[seriesName]) return SAMPLE_CANDIDATES_BY_SERIES[seriesName];
-  // 部分一致（シリーズ名にキーワードが含まれる）
+  // 3. シリーズ名部分一致（グループキーは除外）
   for(const key of Object.keys(SAMPLE_CANDIDATES_BY_SERIES)){
+    if(key.includes('\t')) continue;
     if(seriesName.includes(key) || key.includes(seriesName)){
       return SAMPLE_CANDIDATES_BY_SERIES[key];
     }
   }
-  // 一致なし → 汎用サンプル（シリーズ名を埋め込み、3パターンを明示）
+  // 4. 一致なし → 汎用サンプル
+  const label = groupName ? seriesName + '（' + groupName + '）' : seriesName;
   return [
-    {title:seriesName + ' 第1巻（サンプル）', displayNum:'1巻', publisher:'（サンプル出版社）', label:'（サンプルレーベル）', publishedDate:'2020-01-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:seriesName + ' 第2巻（サンプル）', displayNum:'2巻', publisher:'（サンプル出版社）', label:'',                    publishedDate:'2020-06-01', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
-    {title:seriesName + ' 第3巻（サンプル）', displayNum:'3巻', publisher:'',                   label:'',                    publishedDate:'2021-01-01', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
+    {title:label + ' 第1巻（サンプル）', displayNum:'1巻', publisher:'（サンプル出版社）', label:'（サンプルレーベル）', publishedDate:'2020-01-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:label + ' 第2巻（サンプル）', displayNum:'2巻', publisher:'（サンプル出版社）', label:'',                    publishedDate:'2020-06-01', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
+    {title:label + ' 第3巻（サンプル）', displayNum:'3巻', publisher:'',                   label:'',                    publishedDate:'2021-01-01', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
   ];
 }
 
 let bulkCandidates = [];
 let bulkChecked = new Set();
 
-function openBulkCandidateModal(sid, candidates){
+// defaultGid: 押されたグループのID（null=シリーズ全体）
+function openBulkCandidateModal(sid, candidates, defaultGid){
   const s = db.series.find(x => x.id === sid);
   if(!s) return;
 
+  // 押されたグループ名を取得（候補検索条件＆モーダル表示に使用）
+  const defaultGroup = defaultGid && defaultGid !== '__default'
+    ? s.groups.find(g => g.id === defaultGid) : null;
+  const groupNameForSearch = defaultGroup ? defaultGroup.name : null;
+
   const isSample = !candidates;
-  bulkCandidates = (candidates || _getSampleCandidates(s.name)).slice().sort((a,b)=>{
+  bulkCandidates = (candidates || _getSampleCandidates(s.name, groupNameForSearch)).slice().sort((a,b)=>{
     return (a.publishedDate||'').localeCompare(b.publishedDate||'');
   });
 
+  // 重複チェック：シリーズ全体のタイトルセット
   const existingTitles = new Set();
   (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
   s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
@@ -1239,13 +1284,21 @@ function openBulkCandidateModal(sid, candidates){
     }
   });
 
+  // 追加先グループ選択肢（defaultGid を selected に）
   const groupOptions = [
-    '<option value="__default">グループなし</option>',
-    ...s.groups.map(g => '<option value="' + g.id + '">' + esc(g.name) + '</option>')
+    '<option value="__default"' + (!defaultGid || defaultGid === '__default' ? ' selected' : '') + '>グループなし</option>',
+    ...s.groups.map(g =>
+      '<option value="' + g.id + '"' + (g.id === defaultGid ? ' selected' : '') + '>' + esc(g.name) + '</option>'
+    )
   ].join('');
 
+  // 検索条件ラベル（モーダルタイトル用）
+  const searchLabel = groupNameForSearch
+    ? esc(s.name) + '　›　' + esc(groupNameForSearch)
+    : esc(s.name);
+
   // _buildBulkModalHTML は DOM 要素を返す
-  const bulkDOM = _buildBulkModalHTML(sid, groupOptions, isSample);
+  const bulkDOM = _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel);
   const ov = document.createElement('div');
   ov.className = 'modal-overlay';
   const backdrop = document.createElement('div');
@@ -1261,12 +1314,15 @@ function openBulkCandidateModal(sid, candidates){
   _renderBulkList(existingTitles);
 }
 
-function _buildBulkModalHTML(sid, groupOptions, isSample){
+function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
   // sid をdata属性に持たせてonclick内のクォート問題を回避
   const el = document.createElement('div');
   el.innerHTML = `
     <div class="modal-head">
-      <span class="modal-title">📋 候補から一括追加</span>
+      <div style="flex:1;min-width:0;">
+        <div class="modal-title">📋 候補から一括追加</div>
+        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${searchLabel || ''}</div>
+      </div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
     ${isSample ? `<div style="background:#fff3cd;color:#7a5800;font-size:12px;padding:6px 14px;border-radius:8px;margin-bottom:10px;">⚠️ サンプルデータを表示しています。API連携後は実データに切り替わります。</div>` : ''}
