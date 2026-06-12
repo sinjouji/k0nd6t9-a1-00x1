@@ -263,6 +263,15 @@ textarea{resize:vertical;min-height:72px;}
 .bulk-empty{text-align:center;padding:32px 0;color:var(--br3);font-size:14px;}
 .bulk-foot{margin-top:14px;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
 .bulk-added-count{font-size:13px;color:var(--br3);flex:1;}
+/* JSON入力パネル */
+.bulk-json-panel{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;}
+.bulk-json-label{font-size:12px;font-weight:700;color:var(--br3);margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+.bulk-json-textarea{width:100%;min-height:88px;max-height:160px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--br2);background:#fff;resize:vertical;outline:none;}
+.bulk-json-textarea:focus{border-color:var(--br3);}
+.bulk-json-textarea.error{border-color:var(--red);}
+.bulk-json-err{font-size:11px;color:var(--red);margin-top:4px;min-height:14px;}
+.bulk-json-actions{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;}
+.bulk-json-hint{font-size:11px;color:var(--br4);flex:1;}
 </style>
 </head>
 <body>
@@ -510,7 +519,6 @@ const groupHeader = `
       ? `<button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ編集">✏️</button>`
       : ''
     }
-    <button class="btn-icon" onclick="openBulkCandidateModal('${s.id}',null,'${g.id}')" title="候補から追加" style="font-size:16px;">📋</button>
   </div>
 `;
 
@@ -549,7 +557,7 @@ ${groupMemo}
     ${missHTML}
     <div style="padding:10px 12px 4px;display:flex;gap:8px;align-items:center;">
       <button class="btn btn-ghost btn-sm" onclick="addGroupModal('${s.id}')">＋ グループ追加</button>
-      <button class="btn btn-ghost btn-sm" onclick="openBulkCandidateModal('${s.id}',null,null)" style="border-color:var(--br3);color:var(--br2);">📋 シリーズ全体から追加</button>
+      <button class="btn btn-ghost btn-sm" onclick="openBulkCandidateModal('${s.id}')" style="border-color:var(--br3);color:var(--br2);">📋 候補から追加</button>
     </div>
     ${groupsHTML}
     ${allGroups.length===0
@@ -1196,82 +1204,38 @@ const SAMPLE_CANDIDATES_BY_SERIES = {
     // publisher未取得 → low
     {title:'カービィのすいこみ大作戦',                   displayNum:'',    publisher:'',       label:'',                    publishedDate:'2023-03-17', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
   ],
-
-  // ── グループ別サンプル（シリーズ名\tグループ名 をキーに使用） ──
-  // 星のカービィ × 角川つばさ文庫
-  '星のカービィ	角川つばさ文庫': [
-    {title:'星のカービィ　ロボボプラネット（上）',   displayNum:'上巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2016-07-15', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:'星のカービィ　ロボボプラネット（下）',   displayNum:'下巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2016-09-15', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:'星のカービィ　スターアライズ',           displayNum:'',     publisher:'KADOKAWA', label:'',              publishedDate:'2018-11-15', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
-    {title:'星のカービィ　ディスカバリー',           displayNum:'',     publisher:'',         label:'',              publishedDate:'2022-09-15', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
-  ],
-  // かいけつゾロリ × 角川つばさ文庫
-  'かいけつゾロリ	角川つばさ文庫': [
-    {title:'かいけつゾロリ　なぞのスパイ大作せん', displayNum:'1巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2013-04-10', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:'かいけつゾロリ　まほうつかいのでし',   displayNum:'2巻', publisher:'KADOKAWA', label:'角川つばさ文庫', publishedDate:'2013-08-10', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:'かいけつゾロリ　おばけのきょうかしょ', displayNum:'3巻', publisher:'KADOKAWA', label:'',              publishedDate:'2014-01-10', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
-    {title:'かいけつゾロリ　ゾロリのうちゅうたんけん',displayNum:'4巻',publisher:'',        label:'',              publishedDate:'2014-07-10', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
-  ],
-  // サバイバルシリーズ × 朝日新聞出版（別グループ想定）
-  'サバイバルシリーズ	科学漫画': [
-    {title:'科学漫画サバイバル　山火事のサバイバル', displayNum:'1巻', publisher:'朝日新聞出版', label:'かがくるBOOK', publishedDate:'2019-03-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:'科学漫画サバイバル　大洪水のサバイバル', displayNum:'2巻', publisher:'朝日新聞出版', label:'かがくるBOOK', publishedDate:'2019-08-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:'科学漫画サバイバル　人体のサバイバル',   displayNum:'3巻', publisher:'朝日新聞出版', label:'',             publishedDate:'2020-02-01', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
-    {title:'科学漫画サバイバル　ウイルスのサバイバル',displayNum:'4巻', publisher:'',             label:'',             publishedDate:'2020-09-01', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
-  ],
 };
 
-// シリーズ名・グループ名に対応するサンプルを返す
-// groupName が指定されれば「シリーズ名\tグループ名」を優先検索
-function _getSampleCandidates(seriesName, groupName){
-  // 1. グループ名あり → 「シリーズ名\tグループ名」完全一致
-  if(groupName){
-    const groupKey = seriesName + '\t' + groupName;
-    if(SAMPLE_CANDIDATES_BY_SERIES[groupKey]) return SAMPLE_CANDIDATES_BY_SERIES[groupKey];
-    // グループ名部分一致
-    for(const key of Object.keys(SAMPLE_CANDIDATES_BY_SERIES)){
-      if(key.includes('\t') && key.startsWith(seriesName) && key.includes(groupName)){
-        return SAMPLE_CANDIDATES_BY_SERIES[key];
-      }
-    }
-  }
-  // 2. シリーズ名完全一致
+// シリーズ名に対応するサンプルを返す。一致しない場合は汎用サンプルを返す
+function _getSampleCandidates(seriesName){
+  // 完全一致
   if(SAMPLE_CANDIDATES_BY_SERIES[seriesName]) return SAMPLE_CANDIDATES_BY_SERIES[seriesName];
-  // 3. シリーズ名部分一致（グループキーは除外）
+  // 部分一致（シリーズ名にキーワードが含まれる）
   for(const key of Object.keys(SAMPLE_CANDIDATES_BY_SERIES)){
-    if(key.includes('\t')) continue;
     if(seriesName.includes(key) || key.includes(seriesName)){
       return SAMPLE_CANDIDATES_BY_SERIES[key];
     }
   }
-  // 4. 一致なし → 汎用サンプル
-  const label = groupName ? seriesName + '（' + groupName + '）' : seriesName;
+  // 一致なし → 汎用サンプル（シリーズ名を埋め込み、3パターンを明示）
   return [
-    {title:label + ' 第1巻（サンプル）', displayNum:'1巻', publisher:'（サンプル出版社）', label:'（サンプルレーベル）', publishedDate:'2020-01-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
-    {title:label + ' 第2巻（サンプル）', displayNum:'2巻', publisher:'（サンプル出版社）', label:'',                    publishedDate:'2020-06-01', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
-    {title:label + ' 第3巻（サンプル）', displayNum:'3巻', publisher:'',                   label:'',                    publishedDate:'2021-01-01', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
+    {title:seriesName + ' 第1巻（サンプル）', displayNum:'1巻', publisher:'（サンプル出版社）', label:'（サンプルレーベル）', publishedDate:'2020-01-01', confidence:'high',   reason:'シリーズ名・出版社・レーベルが一致'},
+    {title:seriesName + ' 第2巻（サンプル）', displayNum:'2巻', publisher:'（サンプル出版社）', label:'',                    publishedDate:'2020-06-01', confidence:'medium', reason:'出版社は一致、レーベル未取得'},
+    {title:seriesName + ' 第3巻（サンプル）', displayNum:'3巻', publisher:'',                   label:'',                    publishedDate:'2021-01-01', confidence:'low',    reason:'タイトルはヒットしたが、出版社またはレーベルが検索条件と不一致'},
   ];
 }
 
 let bulkCandidates = [];
 let bulkChecked = new Set();
 
-// defaultGid: 押されたグループのID（null=シリーズ全体）
-function openBulkCandidateModal(sid, candidates, defaultGid){
+function openBulkCandidateModal(sid, candidates){
   const s = db.series.find(x => x.id === sid);
   if(!s) return;
 
-  // 押されたグループ名を取得（候補検索条件＆モーダル表示に使用）
-  const defaultGroup = defaultGid && defaultGid !== '__default'
-    ? s.groups.find(g => g.id === defaultGid) : null;
-  const groupNameForSearch = defaultGroup ? defaultGroup.name : null;
-
   const isSample = !candidates;
-  bulkCandidates = (candidates || _getSampleCandidates(s.name, groupNameForSearch)).slice().sort((a,b)=>{
+  bulkCandidates = (candidates || _getSampleCandidates(s.name)).slice().sort((a,b)=>{
     return (a.publishedDate||'').localeCompare(b.publishedDate||'');
   });
 
-  // 重複チェック：シリーズ全体のタイトルセット
   const existingTitles = new Set();
   (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
   s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
@@ -1284,21 +1248,13 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
     }
   });
 
-  // 追加先グループ選択肢（defaultGid を selected に）
   const groupOptions = [
-    '<option value="__default"' + (!defaultGid || defaultGid === '__default' ? ' selected' : '') + '>グループなし</option>',
-    ...s.groups.map(g =>
-      '<option value="' + g.id + '"' + (g.id === defaultGid ? ' selected' : '') + '>' + esc(g.name) + '</option>'
-    )
+    '<option value="__default">グループなし</option>',
+    ...s.groups.map(g => '<option value="' + g.id + '">' + esc(g.name) + '</option>')
   ].join('');
 
-  // 検索条件ラベル（モーダルタイトル用）
-  const searchLabel = groupNameForSearch
-    ? esc(s.name) + '　›　' + esc(groupNameForSearch)
-    : esc(s.name);
-
   // _buildBulkModalHTML は DOM 要素を返す
-  const bulkDOM = _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel);
+  const bulkDOM = _buildBulkModalHTML(sid, groupOptions, isSample);
   const ov = document.createElement('div');
   ov.className = 'modal-overlay';
   const backdrop = document.createElement('div');
@@ -1311,11 +1267,17 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
   ov.appendChild(modalEl);
   document.body.appendChild(ov);
   modalStack.push(ov);
+  // テキストエリアにサンプルJSONを流し込んで初期表示
+  setTimeout(() => {
+    const ta = document.getElementById('bulkJsonInput');
+    if(ta){
+      ta.value = JSON.stringify(bulkCandidates, null, 2);
+    }
+  }, 0);
   _renderBulkList(existingTitles);
 }
 
 function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
-  // sid をdata属性に持たせてonclick内のクォート問題を回避
   const el = document.createElement('div');
   el.innerHTML = `
     <div class="modal-head">
@@ -1325,8 +1287,22 @@ function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
       </div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
-    ${isSample ? `<div style="background:#fff3cd;color:#7a5800;font-size:12px;padding:6px 14px;border-radius:8px;margin-bottom:10px;">⚠️ サンプルデータを表示しています。API連携後は実データに切り替わります。</div>` : ''}
     <div class="modal-body">
+      <div class="bulk-json-panel">
+        <div class="bulk-json-label">
+          📄 候補JSON
+          ${isSample ? '<span style="background:#fff3cd;color:#7a5800;padding:1px 8px;border-radius:10px;font-weight:400;">サンプル表示中</span>' : ''}
+        </div>
+        <textarea class="bulk-json-textarea" id="bulkJsonInput"
+          placeholder='[{"title":"書名","displayNum":"1巻","publisher":"出版社","label":"レーベル","confidence":"high"}]'
+          oninput="_onBulkJsonInput(this)"></textarea>
+        <div class="bulk-json-err" id="bulkJsonErr"></div>
+        <div class="bulk-json-actions">
+          <span class="bulk-json-hint">JSONを貼り付けると候補一覧が更新されます</span>
+          <button class="btn btn-ghost btn-sm" onclick="_loadSampleCandidates()">サンプルを読む</button>
+          <button class="btn btn-ghost btn-sm" onclick="_clearBulkJson()">クリア</button>
+        </div>
+      </div>
       <div class="bulk-target-bar">
         <span class="bulk-target-label">追加先：</span>
         <select id="bulk_group" onchange="_refreshBulkSelCount()">${groupOptions}</select>
@@ -1344,9 +1320,117 @@ function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
       <button class="btn btn-primary" id="bulkAddBtn">まとめて追加</button>
     </div>
   `;
-  // bulkAddBtn に sid をdata属性で渡してイベント登録
   el.querySelector('#bulkAddBtn').addEventListener('click', function(){ _executeBulkAdd(sid); });
   return el;
+}
+
+// ── JSON入力ハンドラ ──
+
+// テキストエリア入力のたびにパース→候補更新
+function _onBulkJsonInput(ta){
+  const raw = ta.value.trim();
+  const errEl = document.getElementById('bulkJsonErr');
+  const addedMsg = document.getElementById('bulkAddedMsg');
+  if(addedMsg) addedMsg.textContent = '';
+
+  if(!raw){
+    // 空にしたら候補もクリア
+    ta.classList.remove('error');
+    if(errEl) errEl.textContent = '';
+    bulkCandidates = [];
+    bulkChecked = new Set();
+    _renderBulkList();
+    return;
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch(e) {
+    ta.classList.add('error');
+    if(errEl) errEl.textContent = '⚠ JSONの形式が正しくありません：' + e.message;
+    return;
+  }
+
+  // 配列でなければラップ
+  if(!Array.isArray(parsed)) parsed = [parsed];
+
+  // 必須フィールドチェック
+  const invalid = parsed.filter(c => !c.title);
+  if(invalid.length > 0){
+    ta.classList.add('error');
+    if(errEl) errEl.textContent = '⚠ title フィールドのないデータが ' + invalid.length + ' 件あります';
+    return;
+  }
+
+  ta.classList.remove('error');
+  if(errEl) errEl.textContent = '';
+
+  // 発売日順にソートして候補を更新
+  bulkCandidates = parsed.slice().sort((a, b) =>
+    (a.publishedDate || '').localeCompare(b.publishedDate || '')
+  );
+
+  // 重複チェックしてチェック状態を再計算
+  const s = db.series.find(x => x.id === currentSeriesId);
+  const existingTitles = new Set();
+  if(s){
+    (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
+    s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
+  }
+  bulkChecked = new Set();
+  bulkCandidates.forEach((c, i) => {
+    const dup = existingTitles.has(c.title.trim());
+    if(!dup && (c.confidence === 'high' || c.confidence === 'medium')){
+      bulkChecked.add(i);
+    }
+  });
+
+  _renderBulkList(existingTitles);
+}
+
+// 「サンプルを読む」ボタン：現在のシリーズ・グループのサンプルを流し込む
+function _loadSampleCandidates(){
+  const s = db.series.find(x => x.id === currentSeriesId);
+  if(!s) return;
+  const gsel = document.getElementById('bulk_group');
+  const gid = gsel ? gsel.value : null;
+  const grp = gid && gid !== '__default' ? s.groups.find(g => g.id === gid) : null;
+  const sample = _getSampleCandidates(s.name, grp ? grp.name : null);
+  const ta = document.getElementById('bulkJsonInput');
+  if(ta){
+    ta.value = JSON.stringify(sample, null, 2);
+    ta.classList.remove('error');
+    const errEl = document.getElementById('bulkJsonErr');
+    if(errEl) errEl.textContent = '';
+  }
+  // サンプルをそのまま候補に反映
+  bulkCandidates = sample.slice().sort((a, b) =>
+    (a.publishedDate || '').localeCompare(b.publishedDate || '')
+  );
+  const existingTitles = new Set();
+  (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
+  s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
+  bulkChecked = new Set();
+  bulkCandidates.forEach((c, i) => {
+    if(!existingTitles.has(c.title.trim()) && (c.confidence === 'high' || c.confidence === 'medium')){
+      bulkChecked.add(i);
+    }
+  });
+  _renderBulkList(existingTitles);
+}
+
+// テキストエリアをクリアして候補もリセット
+function _clearBulkJson(){
+  const ta = document.getElementById('bulkJsonInput');
+  if(ta){ ta.value = ''; ta.classList.remove('error'); }
+  const errEl = document.getElementById('bulkJsonErr');
+  if(errEl) errEl.textContent = '';
+  const addedMsg = document.getElementById('bulkAddedMsg');
+  if(addedMsg) addedMsg.textContent = '';
+  bulkCandidates = [];
+  bulkChecked = new Set();
+  _renderBulkList();
 }
 
 function _renderBulkList(existingTitles){
