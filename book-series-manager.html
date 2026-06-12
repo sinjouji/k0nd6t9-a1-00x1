@@ -883,13 +883,17 @@ function saveNewBook(sid){
     : 0;
 
   books.push({
-    id: genId(),
-    title,
-    displayNum,
-    owned,
-    memo,
-    order: orderInput ? parseFloat(orderInput) || maxOrder + 1 : maxOrder + 1
-  });
+  id: Date.now().toString(),
+  title: c.title,
+  displayNum: c.displayNum,
+  owned: false,
+  memo: '',
+  order: 0,
+
+  publisher: c.publisher || '',
+  label: c.label || '',
+  publishedDate: c.publishedDate || ''
+});
 
   saveDB();
   closeModal();
@@ -1520,7 +1524,18 @@ function _executeBulkAdd(sid){
   }
   const toAdd = [...bulkChecked].sort((a,b) => a - b).map(i => bulkCandidates[i]);
   toAdd.forEach(c => {
-    books.push({id: genId(), title: c.title, displayNum: c.displayNum || '', owned: false, memo: '', order: 0});
+    books.push({
+  id: genId(),
+  title: c.title,
+  displayNum: c.displayNum || '',
+  owned: false,
+  memo: '',
+  order: 0,
+
+  publisher: c.publisher || '',
+  label: c.label || '',
+  publishedDate: c.publishedDate || ''
+});
   });
   saveDB();
   const msg = document.getElementById('bulkAddedMsg');
