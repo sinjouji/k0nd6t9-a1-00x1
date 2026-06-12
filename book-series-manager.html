@@ -48,6 +48,22 @@ html,body{height:100%;background:var(--bg);color:var(--br2);font-family:-apple-s
 /* ===== PAGES ===== */
 .page{display:none;}.page.active{display:block;}
 
+/* miss */
+.miss-icon-btn{
+  border:none;
+  background:rgba(255,180,0,.18);
+  color:#ffe090;
+  border-radius:20px;
+  padding:2px 8px;
+  font-size:12px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.miss-icon-btn:active{
+  opacity:.7;
+}
+
 /* ===== CARDS ===== */
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden;}
 .card-body{padding:14px 16px;}
@@ -97,6 +113,17 @@ html,body{height:100%;background:var(--bg);color:var(--br2);font-family:-apple-s
 .group-stats{font-size:12px;color:var(--br3);}
 .group-memo-text{font-size:12px;color:var(--br3);padding:4px 16px 8px;background:var(--bg2);white-space:pre-wrap;}
 .group-memo-toggle{background:none;border:none;color:var(--br4);font-size:12px;cursor:pointer;padding:0;}
+.group-next{
+  font-size:12px;
+  color:var(--br3);
+  margin-top:2px;
+  line-height:1.4;
+}
+
+.group-next.complete{
+  color:var(--owned);
+}
+
 
 .book-list{background:var(--card);border-radius:0 0 var(--radius) var(--radius);overflow:hidden;}
 .book-item{display:flex;align-items:center;gap:12px;padding:11px 16px;border-bottom:1px solid var(--bg2);cursor:pointer;transition:background .1s;}
@@ -181,7 +208,7 @@ textarea{resize:vertical;min-height:72px;}
 .toast.show{opacity:1;}
 
 /* ===== ADD BOOK INLINE ===== */
-.add-book-row{display:flex;gap:8px;padding:10px 12px;background:var(--bg2);border-radius:0 0 var(--radius) var(--radius);}
+.add-book-row{display:flex;gap:8px;padding:10px 12px;background:var(--bg2);border-radius:0/* 0 var(--radius) var(--radius)*/;}
 .add-book-row input{flex:1;min-width:0;}
 .add-book-row input:first-child{max-width:72px;}
 
@@ -365,6 +392,12 @@ function nextBuy(s){
   return null;
 }
 
+
+function nextBuyInBooks(books){
+  const sorted = [...(books || [])].sort(sortBooks);
+  return sorted.find(b => !b.owned) || null;
+}
+
 function missingBooks(s){
   const result=[];
   const allGroups=[];
@@ -440,6 +473,10 @@ function renderDetail(){
 
   const groupsHTML=allGroups.map(g=>{
     const gst={total:g.books.length,owned:g.books.filter(b=>b.owned).length};
+    const groupNext = nextBuyInBooks(g.books);
+const groupNextHTML = groupNext
+  ? `<div class="group-next">次▶ ${esc(groupNext.displayNum ? groupNext.displayNum + ' ' : '')}${esc(groupNext.title)}</div>`
+  : `<div class="group-next complete">✨ コンプリート</div>`;
     const groupMemo=g.memo&&g.id!=='__default'?`
       <button class="group-memo-toggle" onclick="toggleGroupMemo('${g.id}')">💬 グループメモ</button>
       <div class="group-memo-text" id="gmemo_${g.id}" style="display:none">${esc(g.memo)}</div>`:'';
@@ -464,7 +501,10 @@ function renderDetail(){
 
 const groupHeader = `
   <div class="group-header">
-    <span class="group-name">${esc(groupTitle)}</span>
+    <div style="flex:1;min-width:0;">
+      <div class="group-name">${esc(groupTitle)}</div>
+      ${groupNextHTML}
+    </div>
     <span class="group-stats">${gst.owned}/${gst.total}冊</span>
     ${g.id !== '__default'
       ? `<button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ編集">✏️</button>`
@@ -475,23 +515,20 @@ const groupHeader = `
 
 return `<div class="group-section">
   ${groupHeader}
-  ${groupMemo}
-  <div class="book-list" id="booklist_${g.id}">
-    ${booksHTML}
-  </div>
-  <div class="add-book-row">
-    <input type="text" placeholder="No." id="newNum_${g.id}" style="max-width:72px">
-    <input type="text" placeholder="タイトル" id="newTitle_${g.id}">
-    <button class="btn btn-primary btn-sm" onclick="quickAddBook('${s.id}','${g.id}')">追加</button>
-  </div>
+${groupMemo}
+<div class="add-book-row">
+  <input type="text" placeholder="No." id="newNum_${g.id}" style="max-width:72px">
+  <input type="text" placeholder="タイトル" id="newTitle_${g.id}">
+  <button class="btn btn-primary btn-sm" onclick="quickAddBook('${s.id}','${g.id}')">追加</button>
+</div>
+<div class="book-list" id="booklist_${g.id}">
+  ${booksHTML}
+</div>
 </div>`;
   }).join('');
 
   // miss list
-  const missHTML=miss.length>0&&miss.length<=10?`<div class="miss-list">
-    <div class="miss-list-title">📋 抜けている巻</div>
-    <div class="miss-list-items">${miss.map(m=>`${m.groupName?'['+esc(m.groupName)+'] ':''}${esc(m.book.displayNum?m.book.displayNum+' ':'')}${esc(m.book.title)}`).join('　')}</div>
-  </div>`:'';
+  const missHTML = '';
 
   document.getElementById('detailContent').innerHTML=`
     <div class="detail-hero">
@@ -499,6 +536,10 @@ return `<div class="group-section">
       <div class="detail-stats">
         <span class="badge badge-owned" style="background:rgba(255,255,255,.15);color:#fff">✓ ${st.owned}冊所持</span>
         ${st.missing>0?`<span class="badge badge-miss" style="background:rgba(255,180,0,.2);color:#ffe090">未 ${st.missing}冊</span>`:''}
+        ${miss.length > 0
+  ? `<button class="miss-icon-btn" onclick="showMissingList(event,'${s.id}')">📋 抜け巻</button>`
+  : ''
+}        
         <span class="badge badge-total" style="background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)">全${st.total}冊</span>
       </div>
       ${nb?`<div class="detail-next"><span class="detail-next-label">次▶</span>${esc(nb.displayNum?nb.displayNum+' ':'')}${esc(nb.title)}</div>`:''}
@@ -1011,6 +1052,40 @@ function showSheet(title,text){
   </div>`;
   ov.querySelector('.sheet-backdrop').onclick=()=>ov.remove();
   document.body.appendChild(ov);
+}
+
+//抜け巻表示用
+function showMissingList(e, sid){
+  if(e) e.stopPropagation();
+
+  const s = db.series.find(x => x.id === sid);
+  if(!s) return;
+
+  const miss = missingBooks(s);
+
+  if(miss.length === 0){
+    showSheet('📋 抜け巻一覧', '抜けている巻はありません');
+    return;
+  }
+
+  const grouped = {};
+
+miss.forEach(m => {
+  const groupName = m.groupName || 'グループなし';
+
+  if(!grouped[groupName]){
+    grouped[groupName] = [];
+  }
+
+  const num = m.book.displayNum ? m.book.displayNum + ' ' : '';
+  grouped[groupName].push(num + m.book.title);
+});
+
+const text = Object.keys(grouped).map(groupName => {
+  return `【${groupName}】\n` + grouped[groupName].join('\n');
+}).join('\n\n');
+
+  showSheet('📋 抜け巻一覧', text);
 }
 
 // ===== CONFIRM =====
