@@ -263,6 +263,29 @@ textarea{resize:vertical;min-height:72px;}
 .bulk-empty{text-align:center;padding:32px 0;color:var(--br3);font-size:14px;}
 .bulk-foot{margin-top:14px;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
 .bulk-added-count{font-size:13px;color:var(--br3);flex:1;}
+/* ===== AI設定パネル ===== */
+.ai-panel{display:none;background:#fdf8f0;border-left:3px solid var(--br4);padding:12px 14px;flex-direction:column;gap:10px;}
+.ai-panel.open{display:flex;}
+.ai-panel-title{font-size:12px;font-weight:700;color:var(--br3);letter-spacing:.04em;}
+.ai-field{display:flex;flex-direction:column;gap:3px;}
+.ai-field label{font-size:11px;color:var(--br3);font-weight:600;}
+.ai-field input,.ai-field textarea{width:100%;border:1px solid var(--br5);border-radius:6px;padding:6px 9px;font-size:13px;color:var(--br1);background:#fff;outline:none;font-family:inherit;}
+.ai-field input:focus,.ai-field textarea:focus{border-color:var(--br3);}
+.ai-field textarea{resize:vertical;min-height:56px;}
+.ai-field textarea.mono{font-size:12px;font-family:monospace;min-height:52px;}
+.ai-field-row{display:flex;gap:6px;align-items:center;}
+.ai-field-row .btn{flex-shrink:0;padding:5px 10px;font-size:11px;}
+.ai-panel-actions{display:flex;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap;}
+.ai-panel-actions .btn{padding:7px 16px;font-size:13px;}
+.ai-save-ok{font-size:12px;color:var(--owned);opacity:0;transition:opacity .3s;}
+.ai-save-ok.show{opacity:1;}
+/* ===== PROMPT MODAL ===== */
+.prompt-modal .modal-body{display:flex;flex-direction:column;}
+.prompt-textarea{width:100%;flex:1;min-height:260px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-family:monospace;line-height:1.6;color:var(--br2);background:#fafaf8;resize:none;outline:none;}
+.prompt-textarea:focus{border-color:var(--br3);}
+.prompt-copy-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--br1);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:.02em;}
+.prompt-copy-btn:active{opacity:.8;}
+.prompt-copy-btn.copied{background:var(--owned);}
 /* JSON入力パネル */
 .bulk-json-panel{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;}
 .bulk-json-label{font-size:12px;font-weight:700;color:var(--br3);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
@@ -515,15 +538,57 @@ const groupHeader = `
       ${groupNextHTML}
     </div>
     <span class="group-stats">${gst.owned}/${gst.total}冊</span>
-    ${g.id !== '__default'
-      ? `<button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ編集">✏️</button>`
-      : ''
-    }
+    ${g.id !== '__default' ? `
+      <button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ名・メモ編集">✏️</button>
+      <button class="btn-icon" onclick="toggleAiPanel('${g.id}')" title="AI設定" style="font-size:15px;">⚙️</button>
+    ` : ''}
   </div>
 `;
 
+const gai = g.ai || {};
+const _defFmt = JSON.stringify({title:"",displayNum:"",publisher:"",label:"",publishedDate:"",confidence:"high",reason:"公式一覧ページ掲載"}, null, 2);
+const aiPanelHTML = g.id !== '__default' ? `
+  <div class="ai-panel" id="aiPanel_${g.id}">
+    <div class="ai-panel-title">⚙️ AI設定 — JSON依頼文</div>
+    <div class="ai-field"><label>出版社</label>
+      <input type="text" id="aip_publisher_${g.id}" value="${esc(gai.publisher||'')}" placeholder="例：KADOKAWA">
+    </div>
+    <div class="ai-field"><label>レーベル</label>
+      <input type="text" id="aip_label_${g.id}" value="${esc(gai.label||'')}" placeholder="例：角川つばさ文庫">
+    </div>
+    <div class="ai-field"><label>参照URL（1行1件）</label>
+      <textarea class="mono" id="aip_sourceUrls_${g.id}" placeholder="https://example.com/list">${esc((gai.sourceUrls||[]).join('\n'))}</textarea>
+    </div>
+    <div class="ai-field"><label>含めるもの</label>
+      <textarea id="aip_includeRules_${g.id}" placeholder="例：小説のみ">${esc(gai.includeRules||'')}</textarea>
+    </div>
+    <div class="ai-field"><label>除外するもの</label>
+      <textarea id="aip_excludeRules_${g.id}" placeholder="例：漫画版・スピンオフ">${esc(gai.excludeRules||'')}</textarea>
+    </div>
+    <div class="ai-field"><label>タイトル整形指示</label>
+      <textarea id="aip_titleRule_${g.id}" placeholder="例：titleから「星のカービィ 」を削除&#10;例：サブタイトルのみ抽出">${esc(gai.titleRule||'')}</textarea>
+    </div>
+    <div class="ai-field"><label>追加ルール（1行1件）</label>
+      <textarea id="aip_extraRules_${g.id}" placeholder="例：複数URLは全て参照&#10;重複作品は統合">${esc((gai.extraRules||[]).join('\n'))}</textarea>
+    </div>
+    <div class="ai-field">
+      <div class="ai-field-row">
+        <label style="flex:1;">出力形式（JSON）</label>
+        <button class="btn btn-ghost" onclick="resetOutputFormat('${g.id}')">↩ 初期値</button>
+      </div>
+      <textarea class="mono" id="aip_outputFormat_${g.id}" style="min-height:120px;">${esc(gai.outputFormat||_defFmt)}</textarea>
+    </div>
+    <div class="ai-panel-actions">
+      <button class="btn btn-ghost btn-sm" onclick="saveAiPanel('${s.id}','${g.id}')">✅ 保存</button>
+      <button class="btn btn-primary btn-sm" onclick="saveAiPanelAndGenerate('${s.id}','${g.id}')">🤖 JSON生成</button>
+      <span class="ai-save-ok" id="aiSaveOk_${g.id}">保存しました</span>
+    </div>
+  </div>
+` : '';
+
 return `<div class="group-section">
   ${groupHeader}
+  ${aiPanelHTML}
 ${groupMemo}
 <div class="add-book-row">
   <input type="text" placeholder="No." id="newNum_${g.id}" style="max-width:72px">
@@ -765,7 +830,7 @@ function editGroup(e,sid,gid){
     </div>
     <div class="modal-body">
       <div class="form-group"><label>グループ名</label><input type="text" id="eg_name" value="${esc(g.name)}"></div>
-      <div class="form-group"><label>メモ</label><textarea id="eg_memo">${esc(g.memo)}</textarea></div>
+      <div class="form-group"><label>メモ</label><textarea id="eg_memo" style="min-height:56px">${esc(g.memo)}</textarea></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="deleteGroup('${sid}','${gid}')">削除</button>
@@ -778,9 +843,132 @@ function updateGroup(sid,gid){
   const g=s?.groups.find(x=>x.id===gid);if(!g)return;
   const name=document.getElementById('eg_name').value.trim();
   if(!name){alert('グループ名は必須です');return;}
-  g.name=name;g.memo=document.getElementById('eg_memo').value;
+  g.name=name;
+  g.memo=document.getElementById('eg_memo').value;
   saveDB();closeModal();renderDetail();showToast('保存しました');
 }
+// ===== AI PANEL =====
+
+const _DEFAULT_OUTPUT_FORMAT = JSON.stringify({
+  title:"", displayNum:"", publisher:"", label:"",
+  publishedDate:"", confidence:"high", reason:"公式一覧ページ掲載"
+}, null, 2);
+
+function toggleAiPanel(gid){
+  const panel = document.getElementById('aiPanel_' + gid);
+  if(panel) panel.classList.toggle('open');
+}
+
+function resetOutputFormat(gid){
+  const el = document.getElementById('aip_outputFormat_' + gid);
+  if(el) el.value = _DEFAULT_OUTPUT_FORMAT;
+}
+
+function _readAiPanelValues(gid){
+  const rawUrls  = (document.getElementById('aip_sourceUrls_'   + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
+  const rawRules = (document.getElementById('aip_extraRules_'   + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
+  return {
+    publisher:    document.getElementById('aip_publisher_'    + gid)?.value.trim() || '',
+    label:        document.getElementById('aip_label_'        + gid)?.value.trim() || '',
+    sourceUrls:   rawUrls,
+    includeRules: document.getElementById('aip_includeRules_' + gid)?.value.trim() || '',
+    excludeRules: document.getElementById('aip_excludeRules_' + gid)?.value.trim() || '',
+    titleRule:    document.getElementById('aip_titleRule_'    + gid)?.value.trim() || '',
+    extraRules:   rawRules,
+    outputFormat: document.getElementById('aip_outputFormat_' + gid)?.value.trim() || _DEFAULT_OUTPUT_FORMAT,
+  };
+}
+
+function saveAiPanel(sid, gid){
+  const s = db.series.find(x=>x.id===sid);
+  const g = s?.groups.find(x=>x.id===gid);
+  if(!g) return;
+  g.ai = _readAiPanelValues(gid);
+  saveDB();
+  const ok = document.getElementById('aiSaveOk_' + gid);
+  if(ok){ ok.classList.add('show'); setTimeout(()=>ok.classList.remove('show'), 1800); }
+}
+
+function saveAiPanelAndGenerate(sid, gid){
+  const s = db.series.find(x=>x.id===sid);
+  const g = s?.groups.find(x=>x.id===gid);
+  if(!g) return;
+  g.ai = _readAiPanelValues(gid);
+  saveDB();
+  _openPromptModal(s, g);
+}
+
+// ===== PROMPT MODAL =====
+
+function _openPromptModal(s, g){
+  const ai = (g && g.ai) || {};
+  const lines = [];
+  lines.push('以下のURLを参照して、書籍一覧をJSON形式で出力してください。');
+  lines.push('');
+  const urls = (ai.sourceUrls || []).filter(Boolean);
+  lines.push('参照URL：');
+  if(urls.length > 0){ urls.forEach(u => lines.push(u)); }
+  else{ lines.push('（URLを設定してください）'); }
+  lines.push('');
+  lines.push('対象：');
+  lines.push('シリーズ名：' + s.name);
+  if(g && g.name) lines.push('グループ：' + g.name);
+  if(ai.publisher) lines.push('出版社：' + ai.publisher);
+  if(ai.label)     lines.push('レーベル：' + ai.label);
+  lines.push('');
+  if(ai.includeRules){ lines.push('含めるもの：'); lines.push(ai.includeRules); lines.push(''); }
+  if(ai.excludeRules){ lines.push('除外するもの：'); lines.push(ai.excludeRules); lines.push(''); }
+  if(ai.titleRule){ lines.push('タイトル整形：'); lines.push(ai.titleRule); lines.push(''); }
+  lines.push('出力形式：');
+  lines.push('');
+  lines.push('[');
+  const fmt = ai.outputFormat || _DEFAULT_OUTPUT_FORMAT;
+  fmt.split('\n').forEach(l => lines.push('  ' + l));
+  lines.push(']');
+  lines.push('');
+  lines.push('ルール：');
+  lines.push('- 発売日順');
+  lines.push('- 最も古い作品を1として採番');
+  lines.push('- displayNumを付与');
+  lines.push('- JSONのみ出力');
+  lines.push('- 説明文不要');
+  lines.push('- Markdown不要');
+  lines.push('- コードブロック不要');
+  const extra = (ai.extraRules || []).filter(Boolean);
+  if(extra.length > 0){ extra.forEach(r => lines.push('- ' + r)); }
+  if(ai.promptMemo){ lines.push(''); lines.push('備考：'); lines.push(ai.promptMemo); }
+
+  const promptText = lines.join('\n');
+  const groupLabel = g ? esc(s.name) + ' › ' + esc(g.name) : esc(s.name);
+
+  const ov = openModal(`
+    <div class="modal-head">
+      <div style="flex:1;min-width:0;">
+        <div class="modal-title">🤖 JSON依頼文</div>
+        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${groupLabel}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;">
+      <textarea class="prompt-textarea" id="promptText" readonly></textarea>
+      <button class="prompt-copy-btn" id="promptCopyBtn" onclick="_copyPrompt()">📋 全文コピー</button>
+    </div>
+  `);
+  ov.querySelector('.modal').classList.add('prompt-modal');
+  document.getElementById('promptText').value = promptText;
+}
+
+function _copyPrompt(){
+  const ta = document.getElementById('promptText'); if(!ta) return;
+  const btn = document.getElementById('promptCopyBtn');
+  const ok = () => {
+    if(btn){ btn.textContent = '✅ コピーしました'; btn.classList.add('copied'); }
+    setTimeout(()=>{ if(btn){ btn.textContent = '📋 全文コピー'; btn.classList.remove('copied'); }}, 2000);
+  };
+  if(navigator.clipboard){ navigator.clipboard.writeText(ta.value).then(ok).catch(()=>{ ta.select(); document.execCommand('copy'); ok(); }); }
+  else{ ta.select(); document.execCommand('copy'); ok(); }
+}
+
 function deleteGroup(sid,gid){
   const s=db.series.find(x=>x.id===sid);
   const g=s?.groups.find(x=>x.id===gid);
