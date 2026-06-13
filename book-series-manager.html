@@ -264,13 +264,12 @@ textarea{resize:vertical;min-height:72px;}
 .bulk-foot{margin-top:14px;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
 .bulk-added-count{font-size:13px;color:var(--br3);flex:1;}
 /* ===== PROMPT MODAL ===== */
-.prompt-modal .modal-body{display:flex;flex-direction:column;gap:0;}
+.prompt-modal .modal-body{display:flex;flex-direction:column;}
 .prompt-textarea{width:100%;flex:1;min-height:260px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-family:monospace;line-height:1.6;color:var(--br2);background:#fafaf8;resize:none;outline:none;}
 .prompt-textarea:focus{border-color:var(--br3);}
 .prompt-copy-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--br1);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:.02em;}
 .prompt-copy-btn:active{opacity:.8;}
 .prompt-copy-btn.copied{background:var(--owned);}
-/* シリーズ編集：AIプロンプト設定セクション */
 .edit-section-toggle{width:100%;display:flex;align-items:center;gap:8px;background:var(--bg2);border:none;border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;font-weight:700;color:var(--br3);cursor:pointer;margin-bottom:6px;text-align:left;}
 .edit-section-toggle:active{opacity:.7;}
 .edit-section-toggle .toggle-arrow{margin-left:auto;font-size:11px;}
@@ -519,10 +518,10 @@ const groupHeader = `
       ${groupNextHTML}
     </div>
     <span class="group-stats">${gst.owned}/${gst.total}冊</span>
-    ${g.id !== '__default'
-      ? `<button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ編集">✏️</button>`
-      : ''
-    }
+    ${g.id !== '__default' ? `
+      <button class="btn-icon" onclick="editGroup(event,'${s.id}','${g.id}')" title="グループ編集">✏️</button>
+      <button class="btn-icon" onclick="openPromptModal(event,'${s.id}','${g.id}')" title="JSON依頼文を作成" style="font-size:15px;">🤖</button>
+    ` : ''}
   </div>
 `;
 
@@ -559,10 +558,9 @@ ${groupMemo}
       ${memoSection}
     </div>
     ${missHTML}
-    <div style="padding:10px 12px 4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <div style="padding:10px 12px 4px;display:flex;gap:8px;align-items:center;">
       <button class="btn btn-ghost btn-sm" onclick="addGroupModal('${s.id}')">＋ グループ追加</button>
       <button class="btn btn-ghost btn-sm" onclick="openBulkCandidateModal('${s.id}')" style="border-color:var(--br3);color:var(--br2);">📋 候補から追加</button>
-      <button class="btn btn-ghost btn-sm" onclick="openPromptModal('${s.id}')" style="border-color:#7a5800;color:#7a5800;">🤖 JSON依頼文を作成</button>
     </div>
     ${groupsHTML}
     ${allGroups.length===0
@@ -708,7 +706,6 @@ function saveSeries(){
 function editSeries(sid){
   const s=db.series.find(x=>x.id===sid);
   if(!s)return;
-  const ai=s.ai||{};
   const ov=openModal(`
     <div class="modal-head">
       <span class="modal-title">シリーズを編集</span>
@@ -716,19 +713,7 @@ function editSeries(sid){
     </div>
     <div class="modal-body">
       <div class="form-group"><label>シリーズ名</label><input type="text" id="es_name" value="${esc(s.name)}"></div>
-      <div class="form-group"><label>メモ</label><textarea id="es_memo" style="min-height:56px">${esc(s.memo)}</textarea></div>
-      <button class="edit-section-toggle" onclick="_toggleEditSection(this)" type="button">
-        🤖 JSON依頼文の設定 <span class="toggle-arrow">▾</span>
-      </button>
-      <div class="edit-section-body" id="editAiSection">
-        <div class="form-group"><label>出版社 (publisher)</label><input type="text" id="es_publisher" value="${esc(ai.publisher||'')}" placeholder="例：KADOKAWA"></div>
-        <div class="form-group"><label>レーベル (label)</label><input type="text" id="es_label" value="${esc(ai.label||'')}" placeholder="例：角川つばさ文庫"></div>
-        <div class="form-group"><label>参照URL（1行1件）</label><textarea id="es_sourceUrls" style="min-height:64px;font-size:12px;font-family:monospace" placeholder="https://example.com/list">${esc((ai.sourceUrls||[]).join('\n'))}</textarea></div>
-        <div class="form-group"><label>含めるもの (includeRules)</label><textarea id="es_includeRules" style="min-height:56px" placeholder="例：小説のみ">${esc(ai.includeRules||'')}</textarea></div>
-        <div class="form-group"><label>除外するもの (excludeRules)</label><textarea id="es_excludeRules" style="min-height:56px" placeholder="例：漫画版・スピンオフ">${esc(ai.excludeRules||'')}</textarea></div>
-        <div class="form-group"><label>タイトル整形 (titleCleanup)</label><input type="text" id="es_titleCleanup" value="${esc(ai.titleCleanup||'')}" placeholder='例：星のカービィ '></div>
-        <div class="form-group"><label>備考 (promptMemo)</label><textarea id="es_promptMemo" style="min-height:56px" placeholder="AIへの補足メモ">${esc(ai.promptMemo||'')}</textarea></div>
-      </div>
+      <div class="form-group"><label>メモ</label><textarea id="es_memo">${esc(s.memo)}</textarea></div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="deleteSeries('${sid}')">削除</button>
@@ -736,29 +721,11 @@ function editSeries(sid){
     </div>
   `);
 }
-function _toggleEditSection(btn){
-  const body=document.getElementById('editAiSection');
-  const arrow=btn.querySelector('.toggle-arrow');
-  const open=body.classList.toggle('open');
-  arrow.textContent=open?'▴':'▾';
-}
 function updateSeries(sid){
   const s=db.series.find(x=>x.id===sid);if(!s)return;
   const name=document.getElementById('es_name').value.trim();
   if(!name){alert('シリーズ名は必須です');return;}
-  s.name=name;
-  s.memo=document.getElementById('es_memo').value;
-  // AI設定フィールド（任意）
-  const rawUrls=(document.getElementById('es_sourceUrls')?.value||'').split('\n').map(u=>u.trim()).filter(Boolean);
-  s.ai={
-    publisher: document.getElementById('es_publisher')?.value.trim()||'',
-    label:     document.getElementById('es_label')?.value.trim()||'',
-    sourceUrls: rawUrls,
-    includeRules: document.getElementById('es_includeRules')?.value.trim()||'',
-    excludeRules: document.getElementById('es_excludeRules')?.value.trim()||'',
-    titleCleanup: document.getElementById('es_titleCleanup')?.value.trim()||'',
-    promptMemo:   document.getElementById('es_promptMemo')?.value.trim()||'',
-  };
+  s.name=name;s.memo=document.getElementById('es_memo').value;
   saveDB();closeModal();renderDetail();showToast('保存しました');
 }
 function deleteSeries(sid){
@@ -766,132 +733,6 @@ function deleteSeries(sid){
     db.series=db.series.filter(x=>x.id!==sid);
     saveDB();closeModal();goHome();showToast('削除しました');
   });
-}
-
-// ===== PROMPT MODAL =====
-function openPromptModal(sid){
-  const s=db.series.find(x=>x.id===sid);
-  if(!s)return;
-  const ai=s.ai||{};
-
-  // ── テンプレート生成 ──
-  const lines=[];
-
-  lines.push('以下のURLを参照して、書籍一覧をJSON形式で出力してください。');
-  lines.push('');
-
-  // 参照URL
-  const urls=(ai.sourceUrls||[]).filter(Boolean);
-  lines.push('参照URL：');
-  if(urls.length>0){
-    urls.forEach(u=>lines.push(u));
-  } else {
-    lines.push('（URLを設定してください）');
-  }
-  lines.push('');
-
-  // 対象
-  lines.push('対象：');
-  lines.push('シリーズ名：'+s.name);
-  if(ai.publisher) lines.push('出版社：'+ai.publisher);
-  if(ai.label)     lines.push('レーベル：'+ai.label);
-  lines.push('');
-
-  // 含めるもの
-  if(ai.includeRules){
-    lines.push('含めるもの：');
-    lines.push(ai.includeRules);
-    lines.push('');
-  }
-
-  // 除外するもの
-  if(ai.excludeRules){
-    lines.push('除外するもの：');
-    lines.push(ai.excludeRules);
-    lines.push('');
-  }
-
-  // タイトル整形
-  if(ai.titleCleanup){
-    lines.push('タイトル整形：');
-    lines.push('title から「'+ai.titleCleanup+'」を削除してください。');
-    lines.push('');
-  }
-
-  // 備考
-  if(ai.promptMemo){
-    lines.push('備考：');
-    lines.push(ai.promptMemo);
-    lines.push('');
-  }
-
-  // 出力形式
-  lines.push('出力形式：');
-  lines.push('');
-  lines.push('[');
-  lines.push('  {');
-  lines.push('    "title": "",');
-  lines.push('    "displayNum": "",');
-  lines.push('    "publisher": "'+(ai.publisher||'')+'",');
-  lines.push('    "label": "'+(ai.label||'')+'",');
-  lines.push('    "publishedDate": "",');
-  lines.push('    "confidence": "high",');
-  lines.push('    "reason": "公式一覧ページ掲載"');
-  lines.push('  }');
-  lines.push(']');
-  lines.push('');
-
-  // ルール
-  lines.push('ルール：');
-  lines.push('- 発売日順');
-  lines.push('- 最も古い作品を1として採番');
-  lines.push('- displayNumを付与');
-  lines.push('- JSONのみ出力');
-  lines.push('- 説明文不要');
-  lines.push('- Markdown不要');
-  lines.push('- コードブロック不要');
-
-  const promptText=lines.join('\n');
-
-  // ── モーダル表示 ──
-  const ov=openModal(`
-    <div class="modal-head">
-      <div style="flex:1;min-width:0;">
-        <div class="modal-title">🤖 JSON依頼文</div>
-        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${esc(s.name)}</div>
-      </div>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-    <div class="modal-body" style="display:flex;flex-direction:column;">
-      <textarea class="prompt-textarea" id="promptText" readonly></textarea>
-      <button class="prompt-copy-btn" id="promptCopyBtn" onclick="_copyPrompt()">
-        📋 全文コピー
-      </button>
-    </div>
-  `);
-  ov.querySelector('.modal').classList.add('prompt-modal');
-  // textareaにセット（innerHTML経由を避けてXSSを防ぐ）
-  document.getElementById('promptText').value=promptText;
-}
-
-function _copyPrompt(){
-  const ta=document.getElementById('promptText');
-  if(!ta)return;
-  // Clipboard API → fallback
-  const btn=document.getElementById('promptCopyBtn');
-  const doSuccess=()=>{
-    if(btn){btn.textContent='✅ コピーしました';btn.classList.add('copied');}
-    setTimeout(()=>{
-      if(btn){btn.textContent='📋 全文コピー';btn.classList.remove('copied');}
-    },2000);
-  };
-  if(navigator.clipboard){
-    navigator.clipboard.writeText(ta.value).then(doSuccess).catch(()=>{
-      ta.select();document.execCommand('copy');doSuccess();
-    });
-  } else {
-    ta.select();document.execCommand('copy');doSuccess();
-  }
 }
 
 // ===== ADD / EDIT GROUP =====
@@ -920,6 +761,7 @@ function editGroup(e,sid,gid){
   e.stopPropagation();
   const s=db.series.find(x=>x.id===sid);
   const g=s?.groups.find(x=>x.id===gid);if(!g)return;
+  const ai=g.ai||{};
   openModal(`
     <div class="modal-head">
       <span class="modal-title">グループを編集</span>
@@ -927,7 +769,19 @@ function editGroup(e,sid,gid){
     </div>
     <div class="modal-body">
       <div class="form-group"><label>グループ名</label><input type="text" id="eg_name" value="${esc(g.name)}"></div>
-      <div class="form-group"><label>メモ</label><textarea id="eg_memo">${esc(g.memo)}</textarea></div>
+      <div class="form-group"><label>メモ</label><textarea id="eg_memo" style="min-height:56px">${esc(g.memo)}</textarea></div>
+      <button class="edit-section-toggle" onclick="_toggleEditSection(this)" type="button">
+        🤖 JSON依頼文の設定 <span class="toggle-arrow">▾</span>
+      </button>
+      <div class="edit-section-body" id="editAiSection">
+        <div class="form-group"><label>出版社 (publisher)</label><input type="text" id="eg_publisher" value="${esc(ai.publisher||'')}" placeholder="例：KADOKAWA"></div>
+        <div class="form-group"><label>レーベル (label)</label><input type="text" id="eg_label" value="${esc(ai.label||'')}" placeholder="例：角川つばさ文庫"></div>
+        <div class="form-group"><label>参照URL（1行1件）</label><textarea id="eg_sourceUrls" style="min-height:64px;font-size:12px;font-family:monospace" placeholder="https://example.com/list">${esc((ai.sourceUrls||[]).join('\n'))}</textarea></div>
+        <div class="form-group"><label>含めるもの (includeRules)</label><textarea id="eg_includeRules" style="min-height:56px" placeholder="例：小説のみ">${esc(ai.includeRules||'')}</textarea></div>
+        <div class="form-group"><label>除外するもの (excludeRules)</label><textarea id="eg_excludeRules" style="min-height:56px" placeholder="例：漫画版・スピンオフ">${esc(ai.excludeRules||'')}</textarea></div>
+        <div class="form-group"><label>タイトル整形 (titleCleanup)</label><input type="text" id="eg_titleCleanup" value="${esc(ai.titleCleanup||'')}" placeholder="例：星のカービィ "></div>
+        <div class="form-group"><label>備考 (promptMemo)</label><textarea id="eg_promptMemo" style="min-height:56px" placeholder="AIへの補足メモ">${esc(ai.promptMemo||'')}</textarea></div>
+      </div>
     </div>
     <div class="modal-foot">
       <button class="btn btn-ghost" onclick="deleteGroup('${sid}','${gid}')">削除</button>
@@ -940,9 +794,115 @@ function updateGroup(sid,gid){
   const g=s?.groups.find(x=>x.id===gid);if(!g)return;
   const name=document.getElementById('eg_name').value.trim();
   if(!name){alert('グループ名は必須です');return;}
-  g.name=name;g.memo=document.getElementById('eg_memo').value;
+  g.name=name;
+  g.memo=document.getElementById('eg_memo').value;
+  const rawUrls=(document.getElementById('eg_sourceUrls')?.value||'').split('\n').map(u=>u.trim()).filter(Boolean);
+  g.ai={
+    publisher:    document.getElementById('eg_publisher')?.value.trim()||'',
+    label:        document.getElementById('eg_label')?.value.trim()||'',
+    sourceUrls:   rawUrls,
+    includeRules: document.getElementById('eg_includeRules')?.value.trim()||'',
+    excludeRules: document.getElementById('eg_excludeRules')?.value.trim()||'',
+    titleCleanup: document.getElementById('eg_titleCleanup')?.value.trim()||'',
+    promptMemo:   document.getElementById('eg_promptMemo')?.value.trim()||'',
+  };
   saveDB();closeModal();renderDetail();showToast('保存しました');
 }
+// ===== PROMPT MODAL =====
+function openPromptModal(e,sid,gid){
+  if(e) e.stopPropagation();
+  const s=db.series.find(x=>x.id===sid);
+  if(!s)return;
+  const g=s.groups.find(x=>x.id===gid);
+  const ai=(g&&g.ai)||{};
+
+  const lines=[];
+  lines.push('以下のURLを参照して、書籍一覧をJSON形式で出力してください。');
+  lines.push('');
+
+  const urls=(ai.sourceUrls||[]).filter(Boolean);
+  lines.push('参照URL：');
+  if(urls.length>0){urls.forEach(u=>lines.push(u));}
+  else{lines.push('（URLを設定してください）');}
+  lines.push('');
+
+  lines.push('対象：');
+  lines.push('シリーズ名：'+s.name);
+  if(g&&g.name) lines.push('グループ：'+g.name);
+  if(ai.publisher) lines.push('出版社：'+ai.publisher);
+  if(ai.label)     lines.push('レーベル：'+ai.label);
+  lines.push('');
+
+  if(ai.includeRules){lines.push('含めるもの：');lines.push(ai.includeRules);lines.push('');}
+  if(ai.excludeRules){lines.push('除外するもの：');lines.push(ai.excludeRules);lines.push('');}
+  if(ai.titleCleanup){
+    lines.push('タイトル整形：');
+    lines.push('title から「'+ai.titleCleanup+'」を削除してください。');
+    lines.push('');
+  }
+  if(ai.promptMemo){lines.push('備考：');lines.push(ai.promptMemo);lines.push('');}
+
+  lines.push('出力形式：');
+  lines.push('');
+  lines.push('[');
+  lines.push('  {');
+  lines.push('    "title": "",');
+  lines.push('    "displayNum": "",');
+  lines.push('    "publisher": "'+(ai.publisher||'')+'",');
+  lines.push('    "label": "'+(ai.label||'')+'",');
+  lines.push('    "publishedDate": "",');
+  lines.push('    "confidence": "high",');
+  lines.push('    "reason": "公式一覧ページ掲載"');
+  lines.push('  }');
+  lines.push(']');
+  lines.push('');
+  lines.push('ルール：');
+  lines.push('- 発売日順');
+  lines.push('- 最も古い作品を1として採番');
+  lines.push('- displayNumを付与');
+  lines.push('- JSONのみ出力');
+  lines.push('- 説明文不要');
+  lines.push('- Markdown不要');
+  lines.push('- コードブロック不要');
+
+  const promptText=lines.join('\n');
+  const groupLabel=g?esc(s.name)+' › '+esc(g.name):esc(s.name);
+
+  const ov=openModal(`
+    <div class="modal-head">
+      <div style="flex:1;min-width:0;">
+        <div class="modal-title">🤖 JSON依頼文</div>
+        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${groupLabel}</div>
+      </div>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;">
+      <textarea class="prompt-textarea" id="promptText" readonly></textarea>
+      <button class="prompt-copy-btn" id="promptCopyBtn" onclick="_copyPrompt()">📋 全文コピー</button>
+    </div>
+  `);
+  ov.querySelector('.modal').classList.add('prompt-modal');
+  document.getElementById('promptText').value=promptText;
+}
+
+function _copyPrompt(){
+  const ta=document.getElementById('promptText');if(!ta)return;
+  const btn=document.getElementById('promptCopyBtn');
+  const ok=()=>{
+    if(btn){btn.textContent='✅ コピーしました';btn.classList.add('copied');}
+    setTimeout(()=>{if(btn){btn.textContent='📋 全文コピー';btn.classList.remove('copied');}},2000);
+  };
+  if(navigator.clipboard){navigator.clipboard.writeText(ta.value).then(ok).catch(()=>{ta.select();document.execCommand('copy');ok();});}
+  else{ta.select();document.execCommand('copy');ok();}
+}
+
+function _toggleEditSection(btn){
+  const body=document.getElementById('editAiSection');
+  const arrow=btn.querySelector('.toggle-arrow');
+  const open=body.classList.toggle('open');
+  arrow.textContent=open?'▴':'▾';
+}
+
 function deleteGroup(sid,gid){
   const s=db.series.find(x=>x.id===sid);
   const g=s?.groups.find(x=>x.id===gid);
