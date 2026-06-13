@@ -1679,27 +1679,66 @@ function _refreshBulkSelCount(){
 function _executeBulkAdd(sid){
   const s = db.series.find(x => x.id === sid);
   if(!s) return;
+
+  // 追加先グループのbooksリスト
   const gid = document.getElementById('bulk_group')?.value || '__default';
-  let books;
+  let targetBooks;
   if(gid === '__default'){
     s.books = s.books || [];
-    books = s.books;
+    targetBooks = s.books;
   } else {
     const g = s.groups.find(x => x.id === gid);
     if(!g) return;
     g.books = g.books || [];
-    books = g.books;
+    targetBooks = g.books;
   }
-  const toAdd = [...bulkChecked].sort((a,b) => a - b).map(i => bulkCandidates[i]);
-  toAdd.forEach(c => {
-    books.push({id: genId(), title: c.title, displayNum: c.displayNum || '', owned: false, memo: '', order: 0});
+
+  // シリーズ全体の全書籍をタイトル→bookオブジェクトのMapで引けるようにする
+  const allBooksMap = new Map();
+  (s.books || []).forEach(b => allBooksMap.set(b.title.trim(), b));
+  s.groups.forEach(g => (g.books || []).forEach(b => allBooksMap.set(b.title.trim(), b)));
+
+  const toProcess = [...bulkChecked].sort((a,b) => a - b).map(i => bulkCandidates[i]);
+  let addedCount = 0, patchedCount = 0;
+
+  toProcess.forEach(c => {
+    const existing = allBooksMap.get(c.title.trim());
+    if(existing){
+      // タイトル一致 → 空欄のみ補完（上書きしない）
+      let patched = false;
+      if(!existing.publisher    && c.publisher)    { existing.publisher    = c.publisher;    patched = true; }
+      if(!existing.label        && c.label)        { existing.label        = c.label;        patched = true; }
+      if(!existing.publishedDate && c.publishedDate){ existing.publishedDate = c.publishedDate; patched = true; }
+      if(patched) patchedCount++;
+    } else {
+      // タイトル不一致 → 追加先グループに新規追加
+      targetBooks.push({
+        id: genId(),
+        title: c.title,
+        displayNum: c.displayNum || '',
+        publisher: c.publisher || '',
+        label: c.label || '',
+        publishedDate: c.publishedDate || '',
+        owned: false,
+        memo: '',
+        order: 0,
+      });
+      addedCount++;
+    }
   });
+
   saveDB();
+
+  const parts = [];
+  if(addedCount   > 0) parts.push('新規追加 ' + addedCount + '冊');
+  if(patchedCount > 0) parts.push('情報補完 ' + patchedCount + '冊');
+  const resultText = parts.length > 0 ? parts.join('・') : '変更なし';
+
   const msg = document.getElementById('bulkAddedMsg');
-  if(msg){ msg.textContent = '✅ ' + toAdd.length + '冊を追加しました'; msg.style.color = 'var(--owned)'; }
+  if(msg){ msg.textContent = '✅ ' + resultText; msg.style.color = 'var(--owned)'; }
   bulkChecked.clear();
   _renderBulkList();
-  setTimeout(()=>{ closeModal(); renderDetail(); showToast(toAdd.length + '冊を追加しました'); }, 800);
+  setTimeout(()=>{ closeModal(); renderDetail(); showToast(resultText); }, 800);
 }
 
 // ===== UTIL =====
