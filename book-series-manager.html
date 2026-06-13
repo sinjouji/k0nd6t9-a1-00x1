@@ -287,6 +287,15 @@ textarea{resize:vertical;min-height:72px;}
 .prompt-copy-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--br1);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:.02em;}
 .prompt-copy-btn:active{opacity:.8;}
 .prompt-copy-btn.copied{background:var(--owned);}
+/* JSON入力パネル */
+.bulk-json-panel{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;}
+.bulk-json-label{font-size:12px;font-weight:700;color:var(--br3);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bulk-json-textarea{width:100%;min-height:88px;max-height:160px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--br2);background:#fff;resize:vertical;outline:none;}
+.bulk-json-textarea:focus{border-color:var(--br3);}
+.bulk-json-textarea.error{border-color:var(--red);}
+.bulk-json-err{font-size:11px;color:var(--red);margin-top:4px;min-height:14px;}
+.bulk-json-actions{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;}
+.bulk-json-hint{font-size:11px;color:var(--br4);flex:1;}
 </style>
 </head>
 <body>
@@ -1311,7 +1320,7 @@ function openBulkCandidateModal(sid, candidates){
   ].join('');
 
   // _buildBulkModalHTML は DOM 要素を返す
-  const bulkDOM = _buildBulkModalHTML(sid, groupOptions, isSample);
+  const bulkDOM = _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel);
   const ov = document.createElement('div');
   ov.className = 'modal-overlay';
   const backdrop = document.createElement('div');
@@ -1324,19 +1333,39 @@ function openBulkCandidateModal(sid, candidates){
   ov.appendChild(modalEl);
   document.body.appendChild(ov);
   modalStack.push(ov);
+  setTimeout(() => {
+    const ta = document.getElementById('bulkJsonInput');
+    if(ta) ta.value = JSON.stringify(bulkCandidates, null, 2);
+  }, 0);
   _renderBulkList(existingTitles);
 }
 
-function _buildBulkModalHTML(sid, groupOptions, isSample){
-  // sid をdata属性に持たせてonclick内のクォート問題を回避
+function _buildBulkModalHTML(sid, groupOptions, isSample, searchLabel){
   const el = document.createElement('div');
   el.innerHTML = `
     <div class="modal-head">
-      <span class="modal-title">📋 候補から一括追加</span>
+      <div style="flex:1;min-width:0;">
+        <div class="modal-title">📋 候補から一括追加</div>
+        <div style="font-size:12px;color:var(--br3);margin-top:1px;">${searchLabel || ''}</div>
+      </div>
       <button class="modal-close" onclick="closeModal()">×</button>
     </div>
-    ${isSample ? `<div style="background:#fff3cd;color:#7a5800;font-size:12px;padding:6px 14px;border-radius:8px;margin-bottom:10px;">⚠️ サンプルデータを表示しています。API連携後は実データに切り替わります。</div>` : ''}
     <div class="modal-body">
+      <div class="bulk-json-panel">
+        <div class="bulk-json-label">
+          📄 候補JSON
+          ${isSample ? '<span style="background:#fff3cd;color:#7a5800;padding:1px 8px;border-radius:10px;font-weight:400;">サンプル表示中</span>' : ''}
+        </div>
+        <textarea class="bulk-json-textarea" id="bulkJsonInput"
+          placeholder='[{"title":"書名","displayNum":"1","publisher":"出版社","label":"レーベル","confidence":"high"}]'
+          oninput="_onBulkJsonInput(this)"></textarea>
+        <div class="bulk-json-err" id="bulkJsonErr"></div>
+        <div class="bulk-json-actions">
+          <span class="bulk-json-hint">JSONを貼り付けると候補一覧が更新されます</span>
+          <button class="btn btn-ghost btn-sm" onclick="_loadSampleCandidates()">サンプルを読む</button>
+          <button class="btn btn-ghost btn-sm" onclick="_clearBulkJson()">クリア</button>
+        </div>
+      </div>
       <div class="bulk-target-bar">
         <span class="bulk-target-label">追加先：</span>
         <select id="bulk_group" onchange="_refreshBulkSelCount()">${groupOptions}</select>
@@ -1354,9 +1383,91 @@ function _buildBulkModalHTML(sid, groupOptions, isSample){
       <button class="btn btn-primary" id="bulkAddBtn">まとめて追加</button>
     </div>
   `;
-  // bulkAddBtn に sid をdata属性で渡してイベント登録
   el.querySelector('#bulkAddBtn').addEventListener('click', function(){ _executeBulkAdd(sid); });
   return el;
+}
+
+function _onBulkJsonInput(ta){
+  const raw = ta.value.trim();
+  const errEl = document.getElementById('bulkJsonErr');
+  const addedMsg = document.getElementById('bulkAddedMsg');
+  if(addedMsg) addedMsg.textContent = '';
+  if(!raw){
+    ta.classList.remove('error');
+    if(errEl) errEl.textContent = '';
+    bulkCandidates = [];
+    bulkChecked = new Set();
+    _renderBulkList();
+    return;
+  }
+  let parsed;
+  try { parsed = JSON.parse(raw); }
+  catch(e){
+    ta.classList.add('error');
+    if(errEl) errEl.textContent = '⚠ JSONの形式が正しくありません：' + e.message;
+    return;
+  }
+  if(!Array.isArray(parsed)) parsed = [parsed];
+  const invalid = parsed.filter(c => !c.title);
+  if(invalid.length > 0){
+    ta.classList.add('error');
+    if(errEl) errEl.textContent = '⚠ title フィールドのないデータが ' + invalid.length + ' 件あります';
+    return;
+  }
+  ta.classList.remove('error');
+  if(errEl) errEl.textContent = '';
+  bulkCandidates = parsed.slice().sort((a,b) =>
+    (a.publishedDate||'').localeCompare(b.publishedDate||'')
+  );
+  const s = db.series.find(x => x.id === currentSeriesId);
+  const existingTitles = new Set();
+  if(s){
+    (s.books||[]).forEach(b => existingTitles.add(b.title.trim()));
+    s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(b.title.trim())));
+  }
+  bulkChecked = new Set();
+  bulkCandidates.forEach((c,i) => {
+    if(!existingTitles.has(c.title.trim()) && (c.confidence==='high'||c.confidence==='medium'))
+      bulkChecked.add(i);
+  });
+  _renderBulkList(existingTitles);
+}
+
+function _loadSampleCandidates(){
+  const s = db.series.find(x => x.id === currentSeriesId);
+  if(!s) return;
+  const gsel = document.getElementById('bulk_group');
+  const gid = gsel ? gsel.value : null;
+  const grp = gid && gid !== '__default' ? s.groups.find(g => g.id === gid) : null;
+  const sample = _getSampleCandidates(s.name, grp ? grp.name : null);
+  const ta = document.getElementById('bulkJsonInput');
+  if(ta){ ta.value = JSON.stringify(sample, null, 2); ta.classList.remove('error'); }
+  const errEl = document.getElementById('bulkJsonErr');
+  if(errEl) errEl.textContent = '';
+  bulkCandidates = sample.slice().sort((a,b) =>
+    (a.publishedDate||'').localeCompare(b.publishedDate||'')
+  );
+  const existingTitles = new Set();
+  (s.books||[]).forEach(b => existingTitles.add(b.title.trim()));
+  s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(b.title.trim())));
+  bulkChecked = new Set();
+  bulkCandidates.forEach((c,i) => {
+    if(!existingTitles.has(c.title.trim()) && (c.confidence==='high'||c.confidence==='medium'))
+      bulkChecked.add(i);
+  });
+  _renderBulkList(existingTitles);
+}
+
+function _clearBulkJson(){
+  const ta = document.getElementById('bulkJsonInput');
+  if(ta){ ta.value = ''; ta.classList.remove('error'); }
+  const errEl = document.getElementById('bulkJsonErr');
+  if(errEl) errEl.textContent = '';
+  const addedMsg = document.getElementById('bulkAddedMsg');
+  if(addedMsg) addedMsg.textContent = '';
+  bulkCandidates = [];
+  bulkChecked = new Set();
+  _renderBulkList();
 }
 
 function _renderBulkList(existingTitles){
