@@ -194,6 +194,26 @@ textarea{resize:vertical;min-height:72px;}
 .settings-item-label{font-size:15px;font-weight:600;color:var(--br2);}
 .settings-item-desc{font-size:12px;color:var(--br3);margin-top:2px;}
 .settings-item-arrow{color:var(--br4);font-size:16px;}
+/* ===== GEMINI設定 ===== */
+.api-key-wrap{display:flex;gap:8px;align-items:center;}
+.api-key-input{flex:1;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:9px 12px;font-size:14px;color:var(--br1);background:#fff;outline:none;font-family:monospace;}
+.api-key-input:focus{border-color:var(--br3);}
+.mode-toggle{display:flex;background:var(--bg2);border-radius:var(--radius-sm);padding:3px;gap:3px;}
+.mode-btn{flex:1;padding:8px 0;border:none;border-radius:6px;font-size:13px;font-weight:600;color:var(--br3);background:transparent;cursor:pointer;}
+.mode-btn.active{background:var(--br1);color:#fff;}
+.usage-bar-wrap{margin:6px 0 2px;}
+.usage-bar{height:6px;border-radius:3px;background:var(--bg2);overflow:hidden;}
+.usage-bar-fill{height:100%;border-radius:3px;background:var(--owned);transition:width .3s;}
+.usage-bar-fill.warn{background:var(--miss);}
+.usage-bar-fill.over{background:var(--red);}
+.usage-stats{display:flex;justify-content:space-between;font-size:12px;color:var(--br3);margin-top:3px;}
+.gemini-status{font-size:12px;padding:6px 10px;border-radius:6px;margin-top:6px;}
+.gemini-status.ok{background:var(--owned-bg);color:var(--owned);}
+.gemini-status.warn{background:var(--miss-bg);color:var(--miss);}
+.gemini-status.err{background:#fde8e8;color:var(--red);}
+.ai-generating{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--br3);padding:8px 0;}
+.ai-generating-dot{width:8px;height:8px;border-radius:50%;background:var(--br4);animation:pulse .9s infinite;}
+@keyframes pulse{0%,100%{opacity:.3;}50%{opacity:1;}}
 
 /* ===== CONFIRM ===== */
 .confirm-overlay{position:fixed;inset:0;z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;}
@@ -263,7 +283,16 @@ textarea{resize:vertical;min-height:72px;}
 .bulk-empty{text-align:center;padding:32px 0;color:var(--br3);font-size:14px;}
 .bulk-foot{margin-top:14px;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
 .bulk-added-count{font-size:13px;color:var(--br3);flex:1;}
-/* ===== AI設定パネル ===== */
+/* JSON入力パネル */
+.bulk-json-panel{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;}
+.bulk-json-label{font-size:12px;font-weight:700;color:var(--br3);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.bulk-json-textarea{width:100%;min-height:88px;max-height:160px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--br2);background:#fff;resize:vertical;outline:none;}
+.bulk-json-textarea:focus{border-color:var(--br3);}
+.bulk-json-textarea.error{border-color:var(--red);}
+.bulk-json-err{font-size:11px;color:var(--red);margin-top:4px;min-height:14px;}
+.bulk-json-actions{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;}
+.bulk-json-hint{font-size:11px;color:var(--br4);flex:1;}
+/* AI設定パネル */
 .ai-panel{display:none;background:#fdf8f0;border-left:3px solid var(--br4);padding:12px 14px;flex-direction:column;gap:10px;}
 .ai-panel.open{display:flex;}
 .ai-panel-title{font-size:12px;font-weight:700;color:var(--br3);letter-spacing:.04em;}
@@ -279,22 +308,13 @@ textarea{resize:vertical;min-height:72px;}
 .ai-panel-actions .btn{padding:7px 16px;font-size:13px;}
 .ai-save-ok{font-size:12px;color:var(--owned);opacity:0;transition:opacity .3s;}
 .ai-save-ok.show{opacity:1;}
-/* ===== PROMPT MODAL ===== */
+/* Prompt modal */
 .prompt-modal .modal-body{display:flex;flex-direction:column;}
 .prompt-textarea{width:100%;flex:1;min-height:260px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;font-family:monospace;line-height:1.6;color:var(--br2);background:#fafaf8;resize:none;outline:none;}
 .prompt-textarea:focus{border-color:var(--br3);}
 .prompt-copy-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:var(--br1);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-weight:700;cursor:pointer;margin-top:10px;letter-spacing:.02em;}
 .prompt-copy-btn:active{opacity:.8;}
 .prompt-copy-btn.copied{background:var(--owned);}
-/* JSON入力パネル */
-.bulk-json-panel{background:var(--bg2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;}
-.bulk-json-label{font-size:12px;font-weight:700;color:var(--br3);margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.bulk-json-textarea{width:100%;min-height:88px;max-height:160px;border:1.5px solid var(--br5);border-radius:var(--radius-sm);padding:8px 10px;font-size:12px;font-family:monospace;color:var(--br2);background:#fff;resize:vertical;outline:none;}
-.bulk-json-textarea:focus{border-color:var(--br3);}
-.bulk-json-textarea.error{border-color:var(--red);}
-.bulk-json-err{font-size:11px;color:var(--red);margin-top:4px;min-height:14px;}
-.bulk-json-actions{display:flex;gap:8px;margin-top:6px;align-items:center;flex-wrap:wrap;}
-.bulk-json-hint{font-size:11px;color:var(--br4);flex:1;}
 </style>
 </head>
 <body>
@@ -338,6 +358,47 @@ textarea{resize:vertical;min-height:72px;}
         </div>
         <input type="file" id="importFile" accept=".json" style="display:none">
       </div>
+      <!-- Gemini API設定 -->
+      <div class="settings-section" id="geminiSettingsSection">
+        <div class="settings-title">🤖 Gemini API設定</div>
+        <div class="card" style="padding:14px 16px;">
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:700;color:var(--br3);display:block;margin-bottom:6px;">動作モード</label>
+            <div class="mode-toggle">
+              <button class="mode-btn" id="modeManualBtn" onclick="setGeminiMode('manual')">✍️ 手動</button>
+              <button class="mode-btn" id="modeAutoBtn"   onclick="setGeminiMode('auto')">⚡ 自動</button>
+            </div>
+            <div style="font-size:11px;color:var(--br3);margin-top:5px;" id="modeDesc"></div>
+          </div>
+          <div style="margin-bottom:12px;">
+            <label style="font-size:12px;font-weight:700;color:var(--br3);display:block;margin-bottom:6px;">APIキー</label>
+            <div class="api-key-wrap">
+              <input class="api-key-input" type="password" id="geminiApiKeyInput" placeholder="AIza...">
+              <button class="btn btn-ghost btn-sm" onclick="toggleApiKeyVisibility()">👁</button>
+              <button class="btn btn-primary btn-sm" onclick="saveGeminiApiKey()">保存</button>
+            </div>
+            <div id="geminiApiKeyStatus" style="font-size:11px;color:var(--br3);margin-top:4px;"></div>
+          </div>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <label style="font-size:12px;font-weight:700;color:var(--br3);flex:1;">使用回数（本日）</label>
+              <button class="btn btn-ghost btn-sm" onclick="resetUsageCount()">リセット</button>
+            </div>
+            <div class="usage-bar-wrap">
+              <div class="usage-bar"><div class="usage-bar-fill" id="usageBarFill" style="width:0%"></div></div>
+            </div>
+            <div class="usage-stats">
+              <span id="usageCountLabel">0 回</span>
+              <span>上限: <input type="number" id="usageLimitInput" min="1" max="999"
+                style="width:46px;border:1px solid var(--br5);border-radius:4px;padding:1px 4px;font-size:12px;text-align:center;"
+                onchange="saveUsageLimit()"> 回/日</span>
+            </div>
+            <div id="geminiUsageStatus" class="gemini-status" style="display:none;"></div>
+            <div style="font-size:11px;color:var(--br3);margin-top:4px;" id="usageResetTimeLabel"></div>
+          </div>
+        </div>
+      </div>
+
       <div class="settings-section">
         <div class="settings-title">危険な操作</div>
         <div class="settings-item" onclick="deleteAll()" style="cursor:pointer;">
@@ -547,6 +608,7 @@ const groupHeader = `
 
 const gai = g.ai || {};
 const _defFmt = JSON.stringify({title:"",displayNum:"",publisher:"",label:"",publishedDate:"",confidence:"high",reason:"公式一覧ページ掲載"}, null, 2);
+const _defFixed = _DEFAULT_FIXED_RULES;
 const aiPanelHTML = g.id !== '__default' ? `
   <div class="ai-panel" id="aiPanel_${g.id}">
     <div class="ai-panel-title">⚙️ AI設定 — JSON依頼文</div>
@@ -568,6 +630,13 @@ const aiPanelHTML = g.id !== '__default' ? `
     <div class="ai-field"><label>タイトル整形指示</label>
       <textarea id="aip_titleRule_${g.id}" placeholder="例：titleから「星のカービィ 」を削除&#10;例：サブタイトルのみ抽出">${esc(gai.titleRule||'')}</textarea>
     </div>
+    <div class="ai-field">
+      <div class="ai-field-row">
+        <label style="flex:1;">固定ルール（編集可）</label>
+        <button class="btn btn-ghost" onclick="resetFixedRules('${g.id}')">↩ 初期値</button>
+      </div>
+      <textarea class="mono" id="aip_fixedRules_${g.id}" style="min-height:140px;">${esc(gai.fixedRules||_defFixed)}</textarea>
+    </div>
     <div class="ai-field"><label>追加ルール（1行1件）</label>
       <textarea id="aip_extraRules_${g.id}" placeholder="例：複数URLは全て参照&#10;重複作品は統合">${esc((gai.extraRules||[]).join('\n'))}</textarea>
     </div>
@@ -580,7 +649,7 @@ const aiPanelHTML = g.id !== '__default' ? `
     </div>
     <div class="ai-panel-actions">
       <button class="btn btn-ghost btn-sm" onclick="saveAiPanel('${s.id}','${g.id}')">✅ 保存</button>
-      <button class="btn btn-primary btn-sm" onclick="saveAiPanelAndGenerate('${s.id}','${g.id}')">🤖 JSON生成</button>
+      <button class="btn btn-primary btn-sm" id="genBtn_${g.id}" onclick="saveAiPanelAndGenerate('${s.id}','${g.id}')">${_geminiGetMode()==='auto'?'⚡ 自動取得':'🤖 JSON生成'}</button>
       <span class="ai-save-ok" id="aiSaveOk_${g.id}">保存しました</span>
     </div>
   </div>
@@ -712,7 +781,7 @@ function goHome(){
   currentPage='home';currentSeriesId=null;
   showPage('home');renderHome();
 }
-function goSettings(){currentPage='settings';showPage('settings');}
+function goSettings(){currentPage='settings';showPage('settings');_renderGeminiSettings();}
 document.getElementById('headerBackBtn').onclick=goHome;
 
 function onFabClick(){
@@ -819,35 +888,27 @@ function saveGroup(sid){
   s.groups.push({id:genId(),name,memo:document.getElementById('mg_memo').value,books:[]});
   saveDB();closeModal();renderDetail();showToast('グループを追加しました');
 }
-function editGroup(e,sid,gid){
-  e.stopPropagation();
-  const s=db.series.find(x=>x.id===sid);
-  const g=s?.groups.find(x=>x.id===gid);if(!g)return;
-  openModal(`
-    <div class="modal-head">
-      <span class="modal-title">グループを編集</span>
-      <button class="modal-close" onclick="closeModal()">×</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group"><label>グループ名</label><input type="text" id="eg_name" value="${esc(g.name)}"></div>
-      <div class="form-group"><label>メモ</label><textarea id="eg_memo" style="min-height:56px">${esc(g.memo)}</textarea></div>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-ghost" onclick="deleteGroup('${sid}','${gid}')">削除</button>
-      <button class="btn btn-primary" onclick="updateGroup('${sid}','${gid}')">保存</button>
-    </div>
-  `);
-}
-function updateGroup(sid,gid){
-  const s=db.series.find(x=>x.id===sid);
-  const g=s?.groups.find(x=>x.id===gid);if(!g)return;
-  const name=document.getElementById('eg_name').value.trim();
-  if(!name){alert('グループ名は必須です');return;}
-  g.name=name;
-  g.memo=document.getElementById('eg_memo').value;
-  saveDB();closeModal();renderDetail();showToast('保存しました');
-}
 // ===== AI PANEL =====
+
+const _DEFAULT_FIXED_RULES = [
+  '発売日順',
+  '最も古い作品を1として採番',
+  'displayNumを付与',
+  'JSONのみ出力',
+  '説明文不要',
+  'Markdown不要',
+  'コードブロック不要',
+  '【厳守ルール】',
+  '参照URLに存在する作品のみ抽出すること',
+  '存在しない作品名を推測生成しないこと',
+  'タイトルは正式名称を完全一致で使用すること',
+  '曖昧な作品は除外すること',
+  '省略禁止',
+  '抜粋禁止',
+  '要約禁止',
+  '全件抽出すること',
+  '各作品に取得元URLを一時付与すること',
+].join('\n');
 
 const _DEFAULT_OUTPUT_FORMAT = JSON.stringify({
   title:"", displayNum:"", publisher:"", label:"",
@@ -859,14 +920,19 @@ function toggleAiPanel(gid){
   if(panel) panel.classList.toggle('open');
 }
 
+function resetFixedRules(gid){
+  const el = document.getElementById('aip_fixedRules_' + gid);
+  if(el) el.value = _DEFAULT_FIXED_RULES;
+}
+
 function resetOutputFormat(gid){
   const el = document.getElementById('aip_outputFormat_' + gid);
   if(el) el.value = _DEFAULT_OUTPUT_FORMAT;
 }
 
 function _readAiPanelValues(gid){
-  const rawUrls  = (document.getElementById('aip_sourceUrls_'   + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
-  const rawRules = (document.getElementById('aip_extraRules_'   + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
+  const rawUrls  = (document.getElementById('aip_sourceUrls_'  + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
+  const rawRules = (document.getElementById('aip_extraRules_'  + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
   return {
     publisher:    document.getElementById('aip_publisher_'    + gid)?.value.trim() || '',
     label:        document.getElementById('aip_label_'        + gid)?.value.trim() || '',
@@ -874,6 +940,7 @@ function _readAiPanelValues(gid){
     includeRules: document.getElementById('aip_includeRules_' + gid)?.value.trim() || '',
     excludeRules: document.getElementById('aip_excludeRules_' + gid)?.value.trim() || '',
     titleRule:    document.getElementById('aip_titleRule_'    + gid)?.value.trim() || '',
+    fixedRules:   document.getElementById('aip_fixedRules_'   + gid)?.value || _DEFAULT_FIXED_RULES,
     extraRules:   rawRules,
     outputFormat: document.getElementById('aip_outputFormat_' + gid)?.value.trim() || _DEFAULT_OUTPUT_FORMAT,
   };
@@ -895,12 +962,16 @@ function saveAiPanelAndGenerate(sid, gid){
   if(!g) return;
   g.ai = _readAiPanelValues(gid);
   saveDB();
-  _openPromptModal(s, g);
+  if(_geminiGetMode() === 'auto'){
+    _geminiAutoGenerate(sid, gid);
+  } else {
+    _openPromptModal(s, g);
+  }
 }
 
 // ===== PROMPT MODAL =====
 
-function _openPromptModal(s, g){
+function _buildPromptText(s, g){
   const ai = (g && g.ai) || {};
   const lines = [];
   lines.push('以下のURLを参照して、書籍一覧をJSON形式で出力してください。');
@@ -926,21 +997,22 @@ function _openPromptModal(s, g){
   fmt.split('\n').forEach(l => lines.push('  ' + l));
   lines.push(']');
   lines.push('');
+  // 固定ルール（編集可能）
   lines.push('ルール：');
-  lines.push('- 発売日順');
-  lines.push('- 最も古い作品を1として採番');
-  lines.push('- displayNumを付与');
-  lines.push('- JSONのみ出力');
-  lines.push('- 説明文不要');
-  lines.push('- Markdown不要');
-  lines.push('- コードブロック不要');
+  const fixedLines = (ai.fixedRules || _DEFAULT_FIXED_RULES).split('\n').filter(l => l.trim());
+  fixedLines.forEach(r => {
+    // 【厳守ルール】のような見出し行はそのまま、それ以外は - を付ける
+    lines.push(r.startsWith('【') ? r : '- ' + r);
+  });
   const extra = (ai.extraRules || []).filter(Boolean);
   if(extra.length > 0){ extra.forEach(r => lines.push('- ' + r)); }
   if(ai.promptMemo){ lines.push(''); lines.push('備考：'); lines.push(ai.promptMemo); }
+  return lines.join('\n');
+}
 
-  const promptText = lines.join('\n');
+function _openPromptModal(s, g){
+  const promptText = _buildPromptText(s, g);
   const groupLabel = g ? esc(s.name) + ' › ' + esc(g.name) : esc(s.name);
-
   const ov = openModal(`
     <div class="modal-head">
       <div style="flex:1;min-width:0;">
@@ -969,6 +1041,209 @@ function _copyPrompt(){
   else{ ta.select(); document.execCommand('copy'); ok(); }
 }
 
+// ===== GEMINI API =====
+
+const LS_GEMINI_KEY   = 'geminiApiKey';
+const LS_GEMINI_MODE  = 'geminiMode';
+const LS_USAGE_DATE   = 'geminiUsageDate';
+const LS_USAGE_COUNT  = 'geminiUsageCount';
+const LS_USAGE_LIMIT  = 'geminiUsageLimit';
+const GEMINI_DEFAULT_LIMIT = 10;
+const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_WARN_RATIO = 0.8;
+
+function _geminiGetMode(){ return localStorage.getItem(LS_GEMINI_MODE) || 'manual'; }
+function _geminiGetKey(){  return localStorage.getItem(LS_GEMINI_KEY)  || ''; }
+function _usageTodayKey(){ return new Date().toISOString().slice(0,10); }
+function _getUsage(){
+  const date = localStorage.getItem(LS_USAGE_DATE);
+  if(date !== _usageTodayKey()) return 0;
+  return parseInt(localStorage.getItem(LS_USAGE_COUNT)||'0',10);
+}
+function _getLimit(){ return parseInt(localStorage.getItem(LS_USAGE_LIMIT)||String(GEMINI_DEFAULT_LIMIT),10); }
+function _incrementUsage(){
+  const today = _usageTodayKey();
+  localStorage.setItem(LS_USAGE_DATE,  today);
+  localStorage.setItem(LS_USAGE_COUNT, String(_getUsage() + 1));
+}
+function _isUsageOver(){ return _getUsage() >= _getLimit(); }
+
+function _renderGeminiSettings(){
+  const mode  = _geminiGetMode();
+  const key   = _geminiGetKey();
+  const usage = _getUsage();
+  const limit = _getLimit();
+  const manualBtn = document.getElementById('modeManualBtn');
+  const autoBtn   = document.getElementById('modeAutoBtn');
+  const modeDesc  = document.getElementById('modeDesc');
+  if(manualBtn) manualBtn.classList.toggle('active', mode === 'manual');
+  if(autoBtn)   autoBtn.classList.toggle('active',   mode === 'auto');
+  if(modeDesc)  modeDesc.textContent = mode === 'auto'
+    ? '⚡ 自動モード：🤖ボタンでGemini APIを自動呼び出し'
+    : '✍️ 手動モード：プロンプト生成 → AIへ貼り付け → JSON投入';
+  const keyInput  = document.getElementById('geminiApiKeyInput');
+  const keyStatus = document.getElementById('geminiApiKeyStatus');
+  if(keyInput){ keyInput.value = key ? '●'.repeat(20) : ''; keyInput.dataset.saved = key ? '1' : ''; }
+  if(keyStatus) keyStatus.textContent = key ? '✅ APIキーが保存されています' : '未設定';
+  const fill     = document.getElementById('usageBarFill');
+  const label    = document.getElementById('usageCountLabel');
+  const limitInp = document.getElementById('usageLimitInput');
+  const statusEl = document.getElementById('geminiUsageStatus');
+  const resetLbl = document.getElementById('usageResetTimeLabel');
+  const ratio    = limit > 0 ? usage / limit : 0;
+  if(fill){
+    fill.style.width = Math.min(ratio*100,100) + '%';
+    fill.className = 'usage-bar-fill' + (ratio>=1?' over':ratio>=GEMINI_WARN_RATIO?' warn':'');
+  }
+  if(label)    label.textContent = usage + ' 回';
+  if(limitInp) limitInp.value   = limit;
+  if(statusEl){
+    if(ratio >= 1){
+      statusEl.style.display='block'; statusEl.className='gemini-status err';
+      statusEl.textContent='⛔ 本日の上限に達しました。自動モードは停止中です。';
+    } else if(ratio >= GEMINI_WARN_RATIO){
+      statusEl.style.display='block'; statusEl.className='gemini-status warn';
+      statusEl.textContent='⚠️ 残り ' + (limit - usage) + ' 回です。';
+    } else { statusEl.style.display='none'; }
+  }
+  if(resetLbl) resetLbl.textContent = usage > 0 ? '翌0:00にリセットされます' : '';
+}
+
+function setGeminiMode(mode){
+  if(mode === 'auto' && !_geminiGetKey()){ showToast('APIキーを先に設定してください'); return; }
+  if(mode === 'auto' && _isUsageOver()){ showToast('本日の使用上限に達しています'); return; }
+  localStorage.setItem(LS_GEMINI_MODE, mode);
+  _renderGeminiSettings();
+  showToast(mode === 'auto' ? '⚡ 自動モードに切り替えました' : '✍️ 手動モードに切り替えました');
+}
+
+function toggleApiKeyVisibility(){
+  const inp = document.getElementById('geminiApiKeyInput');
+  if(!inp) return;
+  if(inp.type === 'password'){ inp.type='text'; const k=_geminiGetKey(); if(k) inp.value=k; }
+  else{ inp.type='password'; const k=_geminiGetKey(); if(k) inp.value='●'.repeat(20); }
+}
+
+function saveGeminiApiKey(){
+  const inp = document.getElementById('geminiApiKeyInput');
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val || val === '●'.repeat(20)){ showToast('APIキーを入力してください'); return; }
+  localStorage.setItem(LS_GEMINI_KEY, val);
+  inp.type='password';
+  _renderGeminiSettings();
+  showToast('APIキーを保存しました');
+}
+
+function saveUsageLimit(){
+  const inp = document.getElementById('usageLimitInput');
+  if(!inp) return;
+  localStorage.setItem(LS_USAGE_LIMIT, String(Math.max(1, parseInt(inp.value||String(GEMINI_DEFAULT_LIMIT),10))));
+  _renderGeminiSettings();
+}
+
+function resetUsageCount(){
+  confirm2('使用回数をリセット','本日の使用回数を0に戻しますか？',()=>{
+    localStorage.setItem(LS_USAGE_DATE,  _usageTodayKey());
+    localStorage.setItem(LS_USAGE_COUNT, '0');
+    _renderGeminiSettings();
+    showToast('使用回数をリセットしました');
+  },'リセット');
+}
+
+async function _geminiAutoGenerate(sid, gid){
+  const key = _geminiGetKey();
+  if(!key){ showToast('⚠ APIキーが設定されていません'); setGeminiMode('manual'); return; }
+  if(_isUsageOver()){ showToast('⛔ 本日の使用上限に達しています'); _renderGeminiSettings(); return; }
+  const s = db.series.find(x=>x.id===sid);
+  const g = s?.groups.find(x=>x.id===gid);
+  if(!s || !g) return;
+  const promptText = _buildPromptText(s, g);
+  const panelEl = document.getElementById('aiPanel_' + gid);
+  let loadingEl = null;
+  if(panelEl){
+    loadingEl = document.createElement('div');
+    loadingEl.className = 'ai-generating';
+    loadingEl.innerHTML = '<div class="ai-generating-dot"></div> Gemini APIで取得中...';
+    panelEl.appendChild(loadingEl);
+  }
+  try{
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+      { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({contents:[{parts:[{text:promptText}]}],generationConfig:{temperature:0.1,maxOutputTokens:8192}}) }
+    );
+    if(!res.ok){ const err=await res.json().catch(()=>({})); throw new Error(err?.error?.message||`HTTPエラー ${res.status}`); }
+    const data = await res.json();
+    const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    if(!raw) throw new Error('レスポンスが空でした');
+    const json = _extractJSON(raw);
+    if(!json) throw new Error('JSONを抽出できませんでした');
+    _incrementUsage();
+    _renderGeminiSettings();
+    openBulkCandidateModal(sid, null, gid);
+    setTimeout(()=>{
+      const ta = document.getElementById('bulkJsonInput');
+      if(ta){ ta.value = JSON.stringify(json, null, 2); ta.classList.remove('error'); _onBulkJsonInput(ta); }
+    }, 80);
+    showToast('✅ Geminiから ' + json.length + '件 取得しました');
+  } catch(e){
+    _showGeminiError(gid, e.message);
+  } finally{
+    if(loadingEl) loadingEl.remove();
+  }
+}
+
+function _extractJSON(raw){
+  let text = raw.trim();
+  const block = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if(block) text = block[1].trim();
+  const start = text.indexOf('[');
+  const end   = text.lastIndexOf(']');
+  if(start === -1 || end === -1 || end <= start) return null;
+  try{ return JSON.parse(text.slice(start, end+1)); } catch(e){ return null; }
+}
+
+function _showGeminiError(gid, msg){
+  showToast('❌ ' + (msg||'エラーが発生しました'));
+  const okEl = document.getElementById('aiSaveOk_' + gid);
+  if(okEl){
+    const orig = okEl.textContent;
+    okEl.textContent='❌ '+(msg||'エラー'); okEl.style.color='var(--red)'; okEl.classList.add('show');
+    setTimeout(()=>{ okEl.textContent=orig; okEl.style.color=''; okEl.classList.remove('show'); }, 3000);
+  }
+}
+
+// ===== ADD / EDIT GROUP =====
+
+function editGroup(e,sid,gid){
+  e.stopPropagation();
+  const s=db.series.find(x=>x.id===sid);
+  const g=s?.groups.find(x=>x.id===gid);if(!g)return;
+  openModal(`
+    <div class="modal-head">
+      <span class="modal-title">グループを編集</span>
+      <button class="modal-close" onclick="closeModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group"><label>グループ名</label><input type="text" id="eg_name" value="${esc(g.name)}"></div>
+      <div class="form-group"><label>メモ</label><textarea id="eg_memo" style="min-height:56px">${esc(g.memo)}</textarea></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="deleteGroup('${sid}','${gid}')">削除</button>
+      <button class="btn btn-primary" onclick="updateGroup('${sid}','${gid}')">保存</button>
+    </div>
+  `);
+}
+function updateGroup(sid,gid){
+  const s=db.series.find(x=>x.id===sid);
+  const g=s?.groups.find(x=>x.id===gid);if(!g)return;
+  const name=document.getElementById('eg_name').value.trim();
+  if(!name){alert('グループ名は必須です');return;}
+  g.name=name;
+  g.memo=document.getElementById('eg_memo').value;
+  saveDB();closeModal();renderDetail();showToast('保存しました');
+}
 function deleteGroup(sid,gid){
   const s=db.series.find(x=>x.id===sid);
   const g=s?.groups.find(x=>x.id===gid);
@@ -1419,7 +1694,6 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
   const s = db.series.find(x => x.id === sid);
   if(!s) return;
 
-  // 押されたグループ名（候補検索・表示ラベルに使用）
   const defaultGroup = defaultGid && defaultGid !== '__default'
     ? s.groups.find(g => g.id === defaultGid) : null;
   const groupNameForSearch = defaultGroup ? defaultGroup.name : null;
@@ -1441,7 +1715,6 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
     }
   });
 
-  // 追加先グループ選択肢（defaultGid を selected に）
   const groupOptions = [
     '<option value="__default"' + (!defaultGid || defaultGid === '__default' ? ' selected' : '') + '>グループなし</option>',
     ...s.groups.map(g =>
@@ -1449,7 +1722,6 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
     )
   ].join('');
 
-  // モーダルタイトル用ラベル
   const searchLabel = groupNameForSearch
     ? esc(s.name) + '　›　' + esc(groupNameForSearch)
     : esc(s.name);
@@ -1467,7 +1739,6 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
   ov.appendChild(modalEl);
   document.body.appendChild(ov);
   modalStack.push(ov);
-  // テキストエリアに現在の候補JSONを流し込み
   setTimeout(() => {
     const ta = document.getElementById('bulkJsonInput');
     if(ta) ta.value = JSON.stringify(bulkCandidates, null, 2);
@@ -1530,13 +1801,11 @@ function _onBulkJsonInput(ta){
   if(!raw){
     ta.classList.remove('error');
     if(errEl) errEl.textContent = '';
-    bulkCandidates = [];
-    bulkChecked = new Set();
-    _renderBulkList();
-    return;
+    bulkCandidates = []; bulkChecked = new Set();
+    _renderBulkList(); return;
   }
   let parsed;
-  try { parsed = JSON.parse(raw); }
+  try{ parsed = JSON.parse(raw); }
   catch(e){
     ta.classList.add('error');
     if(errEl) errEl.textContent = '⚠ JSONの形式が正しくありません：' + e.message;
@@ -1572,16 +1841,14 @@ function _loadSampleCandidates(){
   const s = db.series.find(x => x.id === currentSeriesId);
   if(!s) return;
   const gsel = document.getElementById('bulk_group');
-  const gid = gsel ? gsel.value : null;
-  const grp = gid && gid !== '__default' ? s.groups.find(g => g.id === gid) : null;
+  const gid  = gsel ? gsel.value : null;
+  const grp  = gid && gid !== '__default' ? s.groups.find(g => g.id === gid) : null;
   const sample = _getSampleCandidates(s.name, grp ? grp.name : null);
   const ta = document.getElementById('bulkJsonInput');
   if(ta){ ta.value = JSON.stringify(sample, null, 2); ta.classList.remove('error'); }
   const errEl = document.getElementById('bulkJsonErr');
   if(errEl) errEl.textContent = '';
-  bulkCandidates = sample.slice().sort((a,b) =>
-    (a.publishedDate||'').localeCompare(b.publishedDate||'')
-  );
+  bulkCandidates = sample.slice().sort((a,b) => (a.publishedDate||'').localeCompare(b.publishedDate||''));
   const existingTitles = new Set();
   (s.books||[]).forEach(b => existingTitles.add(b.title.trim()));
   s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(b.title.trim())));
@@ -1600,8 +1867,7 @@ function _clearBulkJson(){
   if(errEl) errEl.textContent = '';
   const addedMsg = document.getElementById('bulkAddedMsg');
   if(addedMsg) addedMsg.textContent = '';
-  bulkCandidates = [];
-  bulkChecked = new Set();
+  bulkCandidates = []; bulkChecked = new Set();
   _renderBulkList();
 }
 
@@ -1693,7 +1959,7 @@ function _executeBulkAdd(sid){
     targetBooks = g.books;
   }
 
-  // シリーズ全体の全書籍をタイトル→bookオブジェクトのMapで引けるようにする
+  // シリーズ全体の全本をタイトル→bookオブジェクトのMapで引けるようにする
   const allBooksMap = new Map();
   (s.books || []).forEach(b => allBooksMap.set(b.title.trim(), b));
   s.groups.forEach(g => (g.books || []).forEach(b => allBooksMap.set(b.title.trim(), b)));
@@ -1711,24 +1977,18 @@ function _executeBulkAdd(sid){
       if(!existing.publishedDate && c.publishedDate){ existing.publishedDate = c.publishedDate; patched = true; }
       if(patched) patchedCount++;
     } else {
-      // タイトル不一致 → 追加先グループに新規追加
+      // タイトル不一致 → 新規追加
       targetBooks.push({
-        id: genId(),
-        title: c.title,
-        displayNum: c.displayNum || '',
-        publisher: c.publisher || '',
-        label: c.label || '',
+        id: genId(), title: c.title, displayNum: c.displayNum || '',
+        publisher: c.publisher || '', label: c.label || '',
         publishedDate: c.publishedDate || '',
-        owned: false,
-        memo: '',
-        order: 0,
+        owned: false, memo: '', order: 0,
       });
       addedCount++;
     }
   });
 
   saveDB();
-
   const parts = [];
   if(addedCount   > 0) parts.push('新規追加 ' + addedCount + '冊');
   if(patchedCount > 0) parts.push('情報補完 ' + patchedCount + '冊');
