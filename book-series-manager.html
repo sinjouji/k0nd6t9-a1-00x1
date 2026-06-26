@@ -1049,7 +1049,7 @@ const LS_USAGE_DATE   = 'geminiUsageDate';
 const LS_USAGE_COUNT  = 'geminiUsageCount';
 const LS_USAGE_LIMIT  = 'geminiUsageLimit';
 const GEMINI_DEFAULT_LIMIT = 10;
-const GEMINI_MODEL = 'gemini-2.5-flash';
+const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_WARN_RATIO = 0.8;
 
 function _geminiGetMode(){ return localStorage.getItem(LS_GEMINI_MODE) || 'manual'; }
@@ -1168,17 +1168,35 @@ async function _geminiAutoGenerate(sid, gid){
     panelEl.appendChild(loadingEl);
   }
   try{
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
-      { method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({contents:[{parts:[{text:promptText}]}],generationConfig:{temperature:0.1,maxOutputTokens:8192}}) }
-    );
-    if(!res.ok){ const err=await res.json().catch(()=>({})); throw new Error(err?.error?.message||`HTTPエラー ${res.status}`); }
+    let res;
+    try{
+      res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
+        { method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({contents:[{parts:[{text:promptText}]}],generationConfig:{temperature:0.1,maxOutputTokens:8192}}) }
+      );
+    } catch(networkErr){
+      // fetch自体が失敗（ネットワーク不通・CORS・DNS失敗など）
+      throw new Error('通信エラー：' + (networkErr.message || 'Load failed') + '（APIキーの形式・ネットワーク接続を確認してください）');
+    }
+    if(!res.ok){
+      const err = await res.json().catch(()=>({}));
+      const msg = err?.error?.message || '';
+      if(res.status === 400) throw new Error('リクエスト不正（400）：' + (msg || 'APIキーまたはリクエスト形式を確認してください'));
+      if(res.status === 403) throw new Error('APIキーが無効または権限なし（403）：' + msg);
+      if(res.status === 429) throw new Error('レート制限に達しました（429）。しばらく待ってから再試行してください');
+      if(res.status === 404) throw new Error('モデルが見つかりません（404）：' + GEMINI_MODEL);
+      throw new Error(`APIエラー ${res.status}：` + (msg || '不明なエラー'));
+    }
     const data = await res.json();
     const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    if(!raw) throw new Error('レスポンスが空でした');
+    if(!raw){
+      // candidates がブロックされた場合
+      const blockReason = data?.promptFeedback?.blockReason || '';
+      throw new Error('レスポンスが空でした' + (blockReason ? '（ブロック理由：' + blockReason + '）' : ''));
+    }
     const json = _extractJSON(raw);
-    if(!json) throw new Error('JSONを抽出できませんでした');
+    if(!json) throw new Error('JSONの抽出に失敗しました。生成結果を手動でJSON入力欄に貼り付けてください');
     _incrementUsage();
     _renderGeminiSettings();
     openBulkCandidateModal(sid, null, gid);
