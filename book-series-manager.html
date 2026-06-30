@@ -974,7 +974,7 @@ function saveAiPanelAndGenerate(sid, gid){
 function _buildPromptText(s, g){
   const ai = (g && g.ai) || {};
   const lines = [];
-  lines.push('以下のURLを参照して、書籍一覧をJSON形式で出力してください。');
+  lines.push('以下のURLをWeb検索で実際に取得し、その内容に基づいて書籍一覧をJSON形式で出力してください。検索せずに記憶や推測だけで生成することは禁止します。');
   lines.push('');
   const urls = (ai.sourceUrls || []).filter(Boolean);
   lines.push('参照URL：');
@@ -1173,7 +1173,11 @@ async function _geminiAutoGenerate(sid, gid){
       res = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${key}`,
         { method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({contents:[{parts:[{text:promptText}]}],generationConfig:{temperature:0.1,maxOutputTokens:8192}}) }
+          body: JSON.stringify({
+            contents:[{parts:[{text:promptText}]}],
+            tools:[{google_search:{}}],  // Web検索でURLの実内容を取得させる（ハルシネーション対策）
+            generationConfig:{temperature:0.1,maxOutputTokens:8192}
+          }) }
       );
     } catch(networkErr){
       // fetch自体が失敗（ネットワーク不通・CORS・DNS失敗など）
