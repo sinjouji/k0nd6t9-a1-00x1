@@ -1190,13 +1190,20 @@ async function _geminiAutoGenerate(sid, gid){
     }
     const data = await res.json();
     const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const finishReason = data?.candidates?.[0]?.finishReason || '';
     if(!raw){
-      // candidates がブロックされた場合
       const blockReason = data?.promptFeedback?.blockReason || '';
-      throw new Error('レスポンスが空でした' + (blockReason ? '（ブロック理由：' + blockReason + '）' : ''));
+      throw new Error('レスポンスが空でした' + (blockReason ? '（ブロック理由：' + blockReason + '）' : finishReason ? '（終了理由：' + finishReason + '）' : ''));
+    }
+    if(finishReason === 'MAX_TOKENS'){
+      console.log('[Gemini raw response - truncated]', raw);
+      throw new Error('出力が長すぎて途中で切れました（MAX_TOKENS）。グループを分割するか参照URLを減らしてください');
     }
     const json = _extractJSON(raw);
-    if(!json) throw new Error('JSONの抽出に失敗しました。生成結果を手動でJSON入力欄に貼り付けてください');
+    if(!json){
+      console.log('[Gemini raw response]', raw);
+      throw new Error('JSONの抽出に失敗しました。詳細はコンソール（console.log）を確認してください');
+    }
     _incrementUsage();
     _renderGeminiSettings();
     openBulkCandidateModal(sid, null, gid);
