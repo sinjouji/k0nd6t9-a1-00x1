@@ -623,20 +623,22 @@ const aiPanelHTML = g.id !== '__default' ? `
     <div class="ai-field"><label>参照URL（1行1件）</label>
       <textarea class="mono" id="aip_sourceUrls_${g.id}" placeholder="https://example.com/list">${esc((gai.sourceUrls||[]).join('\n'))}</textarea>
     </div>
-    <div class="ai-field"><label>含めるもの</label>
-      <textarea id="aip_includeRules_${g.id}" placeholder="例：小説のみ">${esc(gai.includeRules||'')}</textarea>
+    <div class="ai-field">
+      <label>含めるもの（、・,／改行で区切って複数指定可）</label>
+      <textarea id="aip_includeRules_${g.id}" placeholder="例：小説、文庫本">${esc(gai.includeRules||'')}</textarea>
     </div>
-    <div class="ai-field"><label>除外するもの</label>
-      <textarea id="aip_excludeRules_${g.id}" placeholder="例：漫画版・スピンオフ">${esc(gai.excludeRules||'')}</textarea>
+    <div class="ai-field">
+      <label>除外するもの（、・,／改行で区切って複数指定可）</label>
+      <textarea id="aip_excludeRules_${g.id}" placeholder="例：漫画版、絵本、スピンオフ">${esc(gai.excludeRules||'')}</textarea>
     </div>
     <div class="ai-field">
       <label>タイトル整形（コード側で確実に適用）</label>
-      <div style="display:flex;gap:14px;margin:2px 0 6px;font-size:13px;">
-        <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
-          <input type="radio" name="aip_titleMode_${g.id}" value="remove" ${(gai.titleRuleMode||'remove')==='remove'?'checked':''}> 除去
+      <div style="display:flex;gap:16px;margin:2px 0 6px;font-size:13px;flex-wrap:nowrap;">
+        <label style="display:flex;align-items:center;gap:4px;font-weight:400;white-space:nowrap;flex-shrink:0;">
+          <input type="radio" name="aip_titleMode_${g.id}" value="remove" ${(gai.titleRuleMode||'remove')==='remove'?'checked':''} style="flex-shrink:0;"> 除去
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
-          <input type="radio" name="aip_titleMode_${g.id}" value="add" ${gai.titleRuleMode==='add'?'checked':''}> 追加
+        <label style="display:flex;align-items:center;gap:4px;font-weight:400;white-space:nowrap;flex-shrink:0;">
+          <input type="radio" name="aip_titleMode_${g.id}" value="add" ${gai.titleRuleMode==='add'?'checked':''} style="flex-shrink:0;"> 追加
         </label>
       </div>
       <input type="text" id="aip_titleWord_${g.id}" value="${esc(gai.titleRuleWord||'')}" placeholder="例：星のカービィ（単語のみ）">
@@ -963,6 +965,15 @@ function _readAiPanelValues(gid){
 }
 
 // タイトル整形をコード側で確実に適用（AIの指示遵守に依存しない）
+// カンマ・読点・中黒・スラッシュなど複数の区切り文字に対応して配列化
+function _splitRuleText(text){
+  if(!text) return [];
+  return text
+    .split(/[、,，・\/\n]+/)
+    .map(s => s.trim())
+    .filter(Boolean);
+}
+
 function _applyTitleRule(title, ai){
   if(!ai || !ai.titleRuleWord) return title;
   const word = (ai.titleRuleWord || '').trim();
@@ -1036,8 +1047,18 @@ function _buildPromptText(s, g){
   if(ai.label)     lines.push('レーベル：' + ai.label);
   lines.push('');
 
-  if(ai.includeRules){ lines.push('含めるもの：'); lines.push(ai.includeRules); lines.push(''); }
-  if(ai.excludeRules){ lines.push('除外するもの：'); lines.push(ai.excludeRules); lines.push(''); }
+  if(ai.includeRules){
+    const items = _splitRuleText(ai.includeRules);
+    lines.push('含めるもの：');
+    items.forEach(it => lines.push('- ' + it));
+    lines.push('');
+  }
+  if(ai.excludeRules){
+    const items = _splitRuleText(ai.excludeRules);
+    lines.push('除外するもの：');
+    items.forEach(it => lines.push('- ' + it));
+    lines.push('');
+  }
 
   lines.push('出力形式：');
   lines.push('');
