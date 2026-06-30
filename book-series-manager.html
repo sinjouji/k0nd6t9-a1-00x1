@@ -974,22 +974,29 @@ function saveAiPanelAndGenerate(sid, gid){
 function _buildPromptText(s, g){
   const ai = (g && g.ai) || {};
   const lines = [];
-  lines.push('以下のURLをWeb検索で実際に取得し、その内容に基づいて書籍一覧をJSON形式で出力してください。検索せずに記憶や推測だけで生成することは禁止します。');
+
+  // ── 冒頭：事実確認タスクとして明示 ──
+  lines.push('これは事実確認タスクです。創作・推測による出力は重大なエラーとみなします。');
+  lines.push('以下のURLをWeb検索で実際に取得し、ページに実在する情報のみを使って書籍一覧をJSON形式で出力してください。');
+  lines.push('あなたの知識・記憶からの生成は一切禁止します。検索結果に存在しない作品は出力しないでください。');
   lines.push('');
+
   const urls = (ai.sourceUrls || []).filter(Boolean);
   lines.push('参照URL：');
   if(urls.length > 0){ urls.forEach(u => lines.push(u)); }
   else{ lines.push('（URLを設定してください）'); }
   lines.push('');
+
   lines.push('対象：');
   lines.push('シリーズ名：' + s.name);
   if(g && g.name) lines.push('グループ：' + g.name);
   if(ai.publisher) lines.push('出版社：' + ai.publisher);
   if(ai.label)     lines.push('レーベル：' + ai.label);
   lines.push('');
+
   if(ai.includeRules){ lines.push('含めるもの：'); lines.push(ai.includeRules); lines.push(''); }
   if(ai.excludeRules){ lines.push('除外するもの：'); lines.push(ai.excludeRules); lines.push(''); }
-  if(ai.titleRule){ lines.push('タイトル整形：'); lines.push(ai.titleRule); lines.push(''); }
+
   lines.push('出力形式：');
   lines.push('');
   lines.push('[');
@@ -997,16 +1004,31 @@ function _buildPromptText(s, g){
   fmt.split('\n').forEach(l => lines.push('  ' + l));
   lines.push(']');
   lines.push('');
+  lines.push('※ sourceUrl は必須項目です。実際にその作品情報を見つけたページのURLを記入してください。');
+  lines.push('');
+
   // 固定ルール（編集可能）
   lines.push('ルール：');
   const fixedLines = (ai.fixedRules || _DEFAULT_FIXED_RULES).split('\n').filter(l => l.trim());
   fixedLines.forEach(r => {
-    // 【厳守ルール】のような見出し行はそのまま、それ以外は - を付ける
     lines.push(r.startsWith('【') ? r : '- ' + r);
   });
   const extra = (ai.extraRules || []).filter(Boolean);
   if(extra.length > 0){ extra.forEach(r => lines.push('- ' + r)); }
   if(ai.promptMemo){ lines.push(''); lines.push('備考：'); lines.push(ai.promptMemo); }
+
+  // ── 末尾：タイトル整形・最終チェックを再掲して強調（モデルは末尾の指示に従いやすい） ──
+  lines.push('');
+  lines.push('【最終チェック（必ず守ること）】');
+  if(ai.titleRule){
+    lines.push('・タイトル整形：' + ai.titleRule);
+    lines.push('　→ 出力する全ての title が、この整形ルールを適用した後の形になっているか必ず確認すること');
+    lines.push('　→ 整形前の文字列（例：シリーズ名そのもの）が title に残っていた場合は不正解');
+  }
+  lines.push('・出力前に、各作品が本当に参照URLのページに実在するか再確認すること');
+  lines.push('・1件でも確信が持てない作品があれば、その項目は出力しないこと（含めるより除外を優先）');
+  lines.push('・架空のタイトルや存在しないシリーズ名を1件でも含めた場合、出力全体が無効になります');
+
   return lines.join('\n');
 }
 
