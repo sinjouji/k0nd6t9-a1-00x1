@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My英単語帳</title>
+    <title>My英単語帳 Pro</title>
     <style>
         :root {
             --bg: #f7f6f5;
@@ -27,10 +27,15 @@
             width: 100%;
             max-width: 600px;
         }
-        h1 {
-            text-align: center;
-            font-size: 24px;
+        .header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 20px;
+        }
+        h1 {
+            font-size: 24px;
+            margin: 0;
         }
         
         .controls-row {
@@ -54,6 +59,18 @@
             border: none;
             border-radius: 6px;
             cursor: pointer;
+        }
+
+        /* 設定エリアのスタイル */
+        .settings-panel {
+            background: #e2e8f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .settings-panel.open {
+            display: block;
         }
 
         .form-section {
@@ -87,7 +104,7 @@
             display: flex;
             gap: 10px;
         }
-        input[type="text"], textarea {
+        input[type="text"], input[type="password"], input[type="number"], textarea, select {
             width: 100%;
             padding: 10px;
             border: 1px solid #ddd;
@@ -132,7 +149,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             display: flex;
             justify-content: space-between;
-            align-items: center; /* 👈 ボタンびよーん防止に修正しました！ */
+            align-items: center;
         }
         .word-info h3 {
             margin: 0 0 5px 0;
@@ -153,7 +170,7 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 8px;
-            flex-shrink: 0; /* ボタン側が潰れないように保護 */
+            flex-shrink: 0;
             margin-left: 15px;
         }
         .source-badge {
@@ -205,7 +222,32 @@
 <body>
 
 <div class="container">
-    <h1>📚 My英単語帳</h1>
+    <div class="header-row">
+        <h1>📚 My英単語帳 Pro</h1>
+        <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 設定</button>
+    </div>
+
+    <!-- ⚙️ 設定パネル（ローカル保存） -->
+    <div id="settingsPanel" class="settings-panel">
+        <h3>⚙️ 翻訳・AI設定</h3>
+        <div class="form-group">
+            <label>翻訳モード</label>
+            <select id="translateMode" onchange="window.saveSettings()">
+                <option value="google">手動 (従来のGoogle翻訳API)</option>
+                <option value="gemini">AI自動生成 (Gemini API / 完全無料枠)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Gemini API キー</label>
+            <input type="password" id="geminiApiKey" placeholder="AI Studioで取得した AIzaSy... を入力" onchange="window.saveSettings()">
+        </div>
+        <div class="form-group">
+            <label>1日のAPI使用回数上限（使いすぎ防止）</label>
+            <input type="number" id="apiLimit" value="50" onchange="window.saveSettings()">
+            <small style="color: #666;" id="apiCounterLabel">本日の消費: 0 / 50 回</small>
+        </div>
+        <button class="btn-accent" style="width:100%; margin-top:10px;" onclick="window.toggleSettings()">設定を閉じる</button>
+    </div>
     
     <div class="controls-row">
         <input type="text" id="searchBar" class="search-bar" placeholder="単語や作品名で検索..." oninput="window.renderWords()">
@@ -222,7 +264,7 @@
             </div>
         </div>
         <div class="form-group">
-            <label>意味（自動で日本語になります）</label>
+            <label>意味（自動入力に対応）</label>
             <textarea id="meaningInput" rows="2" placeholder="ここに意味が入ります"></textarea>
         </div>
         <div class="form-group">
@@ -253,21 +295,56 @@
 <div id="toast" class="toast"></div>
 
 <script>
+    // デフォルトデータ
     const defaultWords = [
-        { id: "default-apple", word: "apple", meaning: "リンゴ：赤または緑の皮を持つ丸い果物。", example: "I ate a fresh apple.", source: "日常会話" },
-        { id: "default-serendipity", word: "serendipity", meaning: "思いがけない幸運：探してい難かった価値あるものを偶然見つけること。", example: "We found the charming little restaurant by pure serendipity.", source: "映画A" }
+        { id: "default-apple", word: "apple", meaning: "リンゴ：一般的な丸い果物。", example: "I ate a fresh apple.", source: "日常会話" },
+        { id: "default-serendipity", word: "serendipity", meaning: "思いがけない幸運：偶然素晴らしいものを見つけること。", example: "We found the charming little restaurant by pure serendipity.", source: "映画A" }
     ];
 
     if (!localStorage.getItem('vocab_words')) {
         localStorage.setItem('vocab_words', JSON.stringify(defaultWords));
     }
-
     let words = JSON.parse(localStorage.getItem('vocab_words'));
+
+    // ⚙️ 設定の初期読み込み
+    const getTodayKey = () => "api_count_" + new Date().toISOString().split('T')[0];
+    
+    let settings = {
+        mode: localStorage.getItem('vocab_mode') || 'google',
+        apiKey: localStorage.getItem('vocab_gemini_key') || '',
+        limit: parseInt(localStorage.getItem('vocab_api_limit')) || 50,
+        count: parseInt(localStorage.getItem(getTodayKey())) || 0
+    };
+
+    // UIへ設定を反映
+    document.getElementById('translateMode').value = settings.mode;
+    document.getElementById('geminiApiKey').value = settings.apiKey;
+    document.getElementById('apiLimit').value = settings.limit;
+    
+    window.updateCounterLabel = function() {
+        document.getElementById('apiCounterLabel').innerText = `本日の消費: ${settings.count} / ${settings.limit} 回`;
+    };
+    window.updateCounterLabel();
+
+    window.saveSettings = function() {
+        settings.mode = document.getElementById('translateMode').value;
+        settings.apiKey = document.getElementById('geminiApiKey').value;
+        settings.limit = parseInt(document.getElementById('apiLimit').value) || 50;
+        
+        localStorage.setItem('vocab_mode', settings.mode);
+        localStorage.setItem('vocab_gemini_key', settings.apiKey);
+        localStorage.setItem('vocab_api_limit', settings.limit);
+        window.updateCounterLabel();
+    };
+
+    window.toggleSettings = function() {
+        const panel = document.getElementById('settingsPanel');
+        panel.classList.toggle('open');
+    };
 
     window.toggleForm = function(forceOpen = false) {
         const form = document.getElementById('formSection');
         const btn = document.getElementById('toggleFormBtn');
-        
         if (form.classList.contains('open') && !forceOpen) {
             form.classList.remove('open');
             btn.innerText = "＋";
@@ -279,6 +356,7 @@
         }
     };
 
+    // 🧠 翻訳＆自動入力（Google / Gemini 切り替え対応）
     window.fetchWordAndTranslate = async function() {
         const word = document.getElementById('wordInput').value.trim();
         if (!word) return;
@@ -287,28 +365,92 @@
         autoBtn.innerText = "通信中...";
         autoBtn.disabled = true;
 
-        try {
-            const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-            if (!dictRes.ok) throw new Error();
-            const dictData = await dictRes.json();
-            
-            const rawDefinition = dictData[0].meanings[0].definitions[0].definition;
-            const example = dictData[0].meanings[0].definitions[0].example || "";
+        if (settings.mode === 'gemini') {
+            // === 🤖 Gemini API モード ===
+            if (!settings.apiKey) {
+                window.showToast("⚠️ ⚙️設定からGeminiのAPIキーを入力してください");
+                autoBtn.innerText = "自動入力";
+                autoBtn.disabled = false;
+                window.toggleSettings();
+                return;
+            }
+            if (settings.count >= settings.limit) {
+                window.showToast("⚠️ 本日のAPI消費上限に達しました！");
+                autoBtn.innerText = "自動入力";
+                autoBtn.disabled = false;
+                return;
+            }
 
-            const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(rawDefinition)}`;
-            const transRes = await fetch(translateUrl);
-            const transData = await transRes.json();
-            const translatedJapanese = transData[0][0][0];
+            try {
+                // 最新のGemini 2.5 Flashモデルを使用
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${settings.apiKey}`;
+                
+                const prompt = `以下の英単語について、単語帳用のデータをJSON形式のみで返してください。余計な説明文や\`\`\`jsonのようなマークアップは一切含めず、以下のJSONフォーマットを完全に守ってください。
+{
+  "meaning": "ここに日本語での短く分かりやすい意味（学名などは含めず、一般的な訳）",
+  "example": "ここにその単語を使った、短くて実用的な英語の例文"
+}
+対象単語: "${word}"`;
 
-            document.getElementById('meaningInput').value = translatedJapanese;
-            document.getElementById('exampleInput').value = example;
-            window.showToast("✨ 日本語訳を自動入力しました！");
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
 
-        } catch (e) {
-            window.showToast("⚠️ データが見つからないか、翻訳に失敗しました");
-        } finally {
-            autoBtn.innerText = "自動入力";
-            autoBtn.disabled = false;
+                if (!response.ok) throw new Error("APIエラー");
+                const resData = await response.json();
+                const aiResponseText = resData.candidates[0].content.parts[0].text.trim();
+                
+                // AIの返答からJSONをパース
+                const cleanJsonText = aiResponseText.replace(/```json/g, "").replace(/```/g, "").trim();
+                const result = JSON.parse(cleanJsonText);
+
+                document.getElementById('meaningInput').value = result.meaning || "意味を取得できませんでした";
+                document.getElementById('exampleInput').value = result.example || "";
+                
+                // カウンターの加算と保存
+                settings.count += 1;
+                localStorage.setItem(getTodayKey(), settings.count);
+                window.updateCounterLabel();
+                
+                window.showToast("✨ Gemini AIが賢く自動入力しました！");
+            } catch (e) {
+                console.error(e);
+                window.showToast("⚠️ Gemini APIでの取得に失敗しました");
+            } finally {
+                autoBtn.innerText = "自動入力";
+                autoBtn.disabled = false;
+            }
+
+        } else {
+            // === 🌐 従来の手動Google翻訳モード ===
+            try {
+                const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+                if (!dictRes.ok) throw new Error();
+                const dictData = await dictRes.json();
+                
+                let keywords = [];
+                if (dictData[0].meanings[0].synonyms && dictData[0].meanings[0].synonyms.length > 0) {
+                    keywords = dictData[0].meanings[0].synonyms.slice(0, 3);
+                }
+                let rawText = keywords.length > 0 ? keywords.join(', ') : dictData[0].meanings[0].definitions[0].definition;
+                const example = dictData[0].meanings[0].definitions[0].example || "";
+
+                const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(rawText)}`;
+                const transRes = await fetch(translateUrl);
+                const transData = await transRes.json();
+                const translatedJapanese = transData[0][0][0];
+
+                document.getElementById('meaningInput').value = `【${word}】 ` + translatedJapanese;
+                document.getElementById('exampleInput').value = example;
+                window.showToast("✨ 翻訳を自動入力しました！");
+            } catch (e) {
+                window.showToast("⚠️ 辞書データが見つかりませんでした");
+            } finally {
+                autoBtn.innerText = "自動入力";
+                autoBtn.disabled = false;
+            }
         }
     };
 
@@ -381,7 +523,6 @@
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // 💡 修正箇所：deleteWordの頭に「window.」を付けて公式登録しました！
     window.deleteWord = function(id) {
         if(confirm("本当に削除しますか？")) {
             words = words.filter(w => w.id !== id);
