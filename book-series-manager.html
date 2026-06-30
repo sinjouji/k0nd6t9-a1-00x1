@@ -309,6 +309,14 @@ textarea{resize:vertical;min-height:72px;}
 .ai-panel-actions{display:flex;gap:8px;margin-top:4px;align-items:center;flex-wrap:wrap;}
 .ai-panel-actions .btn{padding:7px 16px;font-size:13px;}
 .ai-save-ok{font-size:12px;color:var(--owned);opacity:0;transition:opacity .3s;}
+/* URL動的入力欄 */
+.url-row{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
+.url-row input{flex:1;min-width:0;font-size:12px;font-family:monospace;}
+.url-row .url-btn{flex-shrink:0;width:28px;height:28px;border:none;border-radius:6px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+.url-btn-add{background:var(--br1);color:#fff;}
+.url-btn-add:active{opacity:.7;}
+.url-btn-del{background:var(--bg2);color:var(--br3);}
+.url-btn-del:active{opacity:.7;}
 .ai-save-ok.show{opacity:1;}
 /* Prompt modal */
 .prompt-modal .modal-body{display:flex;flex-direction:column;}
@@ -620,8 +628,16 @@ const aiPanelHTML = g.id !== '__default' ? `
     <div class="ai-field"><label>レーベル</label>
       <input type="text" id="aip_label_${g.id}" value="${esc(gai.label||'')}" placeholder="例：角川つばさ文庫">
     </div>
-    <div class="ai-field"><label>参照URL（1行1件）</label>
-      <textarea class="mono" id="aip_sourceUrls_${g.id}" placeholder="https://example.com/list">${esc((gai.sourceUrls||[]).join('\n'))}</textarea>
+    <div class="ai-field">
+      <label>参照URL</label>
+      <div id="aip_urlRows_${g.id}">
+        ${(gai.sourceUrls && gai.sourceUrls.length > 0 ? gai.sourceUrls : ['']).map((u, i, arr) => `
+          <div class="url-row">
+            <input type="text" class="aip-url-input" value="${esc(u)}" placeholder="https://example.com/list">
+            ${i > 0 ? `<button class="url-btn url-btn-del" onclick="_removeUrlRow(this)" title="削除">×</button>` : '<span style="width:28px;flex-shrink:0;"></span>'}
+            ${i === arr.length - 1 ? `<button class="url-btn url-btn-add" onclick="_addUrlRow('${g.id}')" title="URL欄を追加">＋</button>` : '<span style="width:28px;flex-shrink:0;"></span>'}
+          </div>`).join('')}
+      </div>
     </div>
     <div class="ai-field">
       <label>含めるもの（、・,／改行で区切って複数指定可）</label>
@@ -947,7 +963,7 @@ function resetOutputFormat(gid){
 }
 
 function _readAiPanelValues(gid){
-  const rawUrls  = (document.getElementById('aip_sourceUrls_'  + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
+  const rawUrls  = Array.from(document.querySelectorAll('#aip_urlRows_' + gid + ' .aip-url-input')).map(el=>el.value.trim()).filter(Boolean);
   const rawRules = (document.getElementById('aip_extraRules_'  + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
   const modeEl   = document.querySelector('input[name="aip_titleMode_' + gid + '"]:checked');
   return {
@@ -1058,72 +1074,162 @@ function saveAiPanelAndGenerate(sid, gid){
 
 // ===== PROMPT MODAL =====
 
+// ===== URL動的入力欄 =====
+
+function _addUrlRow(gid){
+  const container = document.getElementById('aip_urlRows_' + gid);
+  if(!container) return;
+  const rows = container.querySelectorAll('.url-row');
+
+  // 最後の行の＋ボタンを非表示スペースに差し替え
+  const lastAdd = container.querySelector('.url-btn-add');
+  if(lastAdd){
+    const spacer = document.createElement('span');
+    spacer.style.cssText = 'width:28px;flex-shrink:0;';
+    lastAdd.replaceWith(spacer);
+  }
+
+  // 新しいURL行を追加
+  const div = document.createElement('div');
+  div.className = 'url-row';
+  div.innerHTML = `
+    <input type="text" class="aip-url-input" placeholder="https://example.com/list">
+    <button class="url-btn url-btn-del" onclick="_removeUrlRow(this)" title="削除">×</button>
+    <button class="url-btn url-btn-add" onclick="_addUrlRow('${gid}')" title="URL欄を追加">＋</button>
+  `;
+  container.appendChild(div);
+  div.querySelector('input').focus();
+}
+
+function _removeUrlRow(btn){
+  const row = btn.closest('.url-row');
+  const container = row?.parentElement;
+  if(!container) return;
+
+  const isLast = !container.querySelector('.url-btn-add') || row.querySelector('.url-btn-add');
+  row.remove();
+
+  // 削除した行が最後（＋ボタン持ち）だった場合、新しい最後の行に＋を付与
+  const rows = container.querySelectorAll('.url-row');
+  if(rows.length === 0) return;
+  const lastRow = rows[rows.length - 1];
+  if(!lastRow.querySelector('.url-btn-add')){
+    // 末尾スペーサーを＋ボタンに差し替え
+    const spacers = lastRow.querySelectorAll('span[style*="width:28px"]');
+    const lastSpacer = spacers[spacers.length - 1];
+    if(lastSpacer){
+      const btn2 = document.createElement('button');
+      // gidをcontainerのidから取得
+      const gid = container.id.replace('aip_urlRows_', '');
+      btn2.className = 'url-btn url-btn-add';
+      btn2.title = 'URL欄を追加';
+      btn2.textContent = '＋';
+      btn2.onclick = () => _addUrlRow(gid);
+      lastSpacer.replaceWith(btn2);
+    }
+  }
+}
+
 function _buildPromptText(s, g){
   const ai = (g && g.ai) || {};
   const lines = [];
 
-  // ── 冒頭：事実確認タスクとして明示 ──
-  lines.push('これは事実確認タスクです。創作・推測による出力は重大なエラーとみなします。');
-  lines.push('以下のURLをWeb検索で実際に取得し、ページに実在する情報のみを使って書籍一覧をJSON形式で出力してください。');
-  lines.push('あなたの知識・記憶からの生成は一切禁止します。検索結果に存在しない作品は出力しないでください。');
+  const urls = (ai.sourceUrls || []).filter(Boolean);
+  const includeItems = ai.includeRules ? _splitRuleText(ai.includeRules) : [];
+  const excludeItems = ai.excludeRules ? _splitRuleText(ai.excludeRules) : [];
+  const titleWord    = (ai.titleRuleWord || '').trim();
+  const titleMode    = ai.titleRuleMode === 'add' ? '先頭に付与' : '先頭から除去';
+
+  // ── 役割定義（Gemini推奨：創造性を完全に封じる） ──
+  lines.push('あなたは極めて厳格なデータ抽出専門のプログラムです。');
+  lines.push('創造性・推測・要約・補完は一切禁止します。');
+  lines.push('指定されたWebページのテキストから、条件に完全一致する情報のみを「無加工で」抽出してください。');
   lines.push('');
 
-  const urls = (ai.sourceUrls || []).filter(Boolean);
-  lines.push('参照URL：');
+  // ── 前提条件 ──
+  lines.push('# 前提条件');
+  lines.push('シリーズ名：' + s.name);
+  if(g && g.name)  lines.push('グループ：'   + g.name);
+  if(ai.publisher) lines.push('出版社：'     + ai.publisher);
+  if(ai.label)     lines.push('レーベル：'   + ai.label);
+  if(includeItems.length > 0){
+    lines.push('含めるもの：');
+    includeItems.forEach(it => lines.push('- ' + it));
+  }
+  if(excludeItems.length > 0){
+    lines.push('除外するもの：');
+    excludeItems.forEach(it => lines.push('- ' + it + '（ひらがな・カタカナ・漢字など表記ゆれも含めて除外）'));
+  }
+  lines.push('');
+
+  // ── 対象URL ──
+  lines.push('# 対象URL');
   if(urls.length > 0){ urls.forEach(u => lines.push(u)); }
   else{ lines.push('（URLを設定してください）'); }
   lines.push('');
 
-  lines.push('対象：');
-  lines.push('シリーズ名：' + s.name);
-  if(g && g.name) lines.push('グループ：' + g.name);
-  if(ai.publisher) lines.push('出版社：' + ai.publisher);
-  if(ai.label)     lines.push('レーベル：' + ai.label);
+  // ── ステップ強制（Gemini推奨の核心） ──
+  lines.push('# 実行手順（重要：必ずこの順番で思考してから出力してください）');
+  lines.push('');
+  if(urls.length > 1){
+    lines.push('Step 1. 上記URLを1つずつ順番にWeb検索で取得し、ページに存在する書籍タイトルと発売日を、');
+    lines.push('        1文字も変えず（全角・半角・スペース・記号を含め完全一致で）すべて内部メモリに書き出す。');
+    lines.push('        → URLが複数ある場合は、1件ずつ取得・記録を繰り返してからStep 2へ進むこと。');
+  } else {
+    lines.push('Step 1. 上記URLをWeb検索で取得し、ページに存在する書籍タイトルと発売日を、');
+    lines.push('        1文字も変えず（全角・半角・スペース・記号を含め完全一致で）すべて内部メモリに書き出す。');
+  }
+  lines.push('');
+  if(excludeItems.length > 0){
+    lines.push('Step 2. 書き出したリストから「除外するもの」に該当する作品を完全に削除する。');
+    lines.push('        （ひらがな・カタカナ・漢字など表記ゆれも含めて除外すること）');
+  } else {
+    lines.push('Step 2. 書き出したリストから、前提条件の「除外するもの」に該当する作品を削除する。');
+  }
+  lines.push('');
+  lines.push('Step 3. 残った作品を発売日順（古い順）に並び替え、1から連番（displayNum）を振る。');
+  lines.push('');
+  if(titleWord){
+    lines.push('Step 4. 各タイトルの先頭にある「' + titleWord + '」を' + titleMode + '。');
+    lines.push('        それ以外の文字は1文字も変更してはならない。');
+    lines.push('        ※ このStep 4はアプリ側でも自動補正されるため、確実でない場合は整形前のままでよい。');
+    lines.push('');
+    lines.push('Step 5. 重複している作品があれば1件に統合する。');
+    lines.push('');
+    lines.push('Step 6. 出力しようとしているタイトルが、元ページのテキストと（Step 4の整形を除いて）');
+  } else {
+    lines.push('Step 4. 重複している作品があれば1件に統合する。');
+    lines.push('');
+    lines.push('Step 5. 出力しようとしているタイトルが、元ページのテキストと');
+  }
+  lines.push('        完全一致しているか再確認する。');
+  lines.push('        少しでも不確実な作品は「除外」を優先すること。');
   lines.push('');
 
-  if(ai.includeRules){
-    const items = _splitRuleText(ai.includeRules);
-    lines.push('含めるもの：');
-    items.forEach(it => lines.push('- ' + it));
-    lines.push('');
-  }
-  if(ai.excludeRules){
-    const items = _splitRuleText(ai.excludeRules);
-    lines.push('除外するもの：');
-    items.forEach(it => lines.push('- ' + it));
-    lines.push('');
-  }
-
-  lines.push('出力形式：');
+  // ── 出力形式 ──
+  lines.push('# 出力形式');
+  lines.push('Markdownのコードブロック（```json）は使用しない。純粋なJSONデータのみを出力すること。');
+  lines.push('説明文・前置き・補足は一切不要。');
   lines.push('');
   lines.push('[');
   const fmt = ai.outputFormat || _DEFAULT_OUTPUT_FORMAT;
   fmt.split('\n').forEach(l => lines.push('  ' + l));
   lines.push(']');
   lines.push('');
-  lines.push('※ sourceUrl は必須項目です。実際にその作品情報を見つけたページのURLを記入してください。');
-  lines.push('');
 
   // 固定ルール（編集可能）
-  lines.push('ルール：');
   const fixedLines = (ai.fixedRules || _DEFAULT_FIXED_RULES).split('\n').filter(l => l.trim());
-  fixedLines.forEach(r => {
-    lines.push(r.startsWith('【') ? r : '- ' + r);
-  });
-  const extra = (ai.extraRules || []).filter(Boolean);
-  if(extra.length > 0){ extra.forEach(r => lines.push('- ' + r)); }
-  if(ai.promptMemo){ lines.push(''); lines.push('備考：'); lines.push(ai.promptMemo); }
-
-  // ── 末尾：タイトル整形・最終チェックを再掲して強調（モデルは末尾の指示に従いやすい） ──
-  lines.push('');
-  lines.push('【最終チェック（必ず守ること）】');
-  if(ai.titleRuleWord){
-    const modeLabel = ai.titleRuleMode === 'add' ? '先頭に付与' : '先頭から除去';
-    lines.push('・タイトル整形：「' + ai.titleRuleWord + '」を' + modeLabel + 'した形で出力すること（参考。最終的にはアプリ側で自動補正します）');
+  if(fixedLines.length > 0){
+    lines.push('# その他のルール');
+    fixedLines.forEach(r => {
+      lines.push(r.startsWith('【') ? r : '- ' + r);
+    });
+    const extra = (ai.extraRules || []).filter(Boolean);
+    if(extra.length > 0){ extra.forEach(r => lines.push('- ' + r)); }
+    lines.push('');
   }
-  lines.push('・出力前に、各作品が本当に参照URLのページに実在するか再確認すること');
-  lines.push('・1件でも確信が持てない作品があれば、その項目は出力しないこと（含めるより除外を優先）');
-  lines.push('・架空のタイトルや存在しないシリーズ名を1件でも含めた場合、出力全体が無効になります');
+
+  if(ai.promptMemo){ lines.push('# 備考'); lines.push(ai.promptMemo); lines.push(''); }
 
   return lines.join('\n');
 }
