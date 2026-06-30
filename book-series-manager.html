@@ -1915,10 +1915,21 @@ function _onBulkJsonInput(ta){
   }
   ta.classList.remove('error');
   if(errEl) errEl.textContent = '';
+
+  const s = db.series.find(x => x.id === currentSeriesId);
+
+  // 選択中グループの ai 設定を取得し、タイトル整形をコード側で確実に適用
+  const gsel = document.getElementById('bulk_group');
+  const gidForRule = gsel ? gsel.value : null;
+  const groupForRule = (s && gidForRule && gidForRule !== '__default')
+    ? s.groups.find(g => g.id === gidForRule) : null;
+  if(groupForRule && groupForRule.ai && groupForRule.ai.titleRuleWord){
+    parsed = parsed.map(c => ({...c, title: _applyTitleRule(c.title, groupForRule.ai)}));
+  }
+
   bulkCandidates = parsed.slice().sort((a,b) =>
     (a.publishedDate||'').localeCompare(b.publishedDate||'')
   );
-  const s = db.series.find(x => x.id === currentSeriesId);
   const existingTitles = new Set();
   if(s){
     (s.books||[]).forEach(b => existingTitles.add(b.title.trim()));
