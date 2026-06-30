@@ -979,6 +979,27 @@ function _normalizeTitle(title){
   return t;
 }
 
+// excludeRules の各単語が title / label に部分一致する候補を機械的に除外する
+// （Geminiの判断に頼らず、コード側で確実にフィルタリングする）
+function _filterByExcludeRules(candidates, ai){
+  if(!ai || !ai.excludeRules) return { kept: candidates, removed: [] };
+  const words = _splitRuleText(ai.excludeRules);
+  if(words.length === 0) return { kept: candidates, removed: [] };
+
+  const kept = [];
+  const removed = [];
+  candidates.forEach(c => {
+    const haystack = _normalizeTitle((c.title||'') + ' ' + (c.label||''));
+    const matched = words.find(w => w && haystack.includes(_normalizeTitle(w)));
+    if(matched){
+      removed.push({ ...c, _excludedBy: matched });
+    } else {
+      kept.push(c);
+    }
+  });
+  return { kept, removed };
+}
+
 function _splitRuleText(text){
   if(!text) return [];
   return text
@@ -1293,8 +1314,20 @@ async function _geminiAutoGenerate(sid, gid){
     const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const finishReason = data?.candidates?.[0]?.finishReason || '';
     if(!raw){
-      const blockReason = data?.promptFeedback?.blockReason || '';
-      throw new Error('レスポンスが空でした' + (blockReason ? '（ブロック理由：' + blockReason + '）' : finishReason ? '（終了理由：' + finishReason + '）' : ''));
+      console.log('[Gemini empty response - full data]', JSON.stringify(data, null, 2));
+      const blockReason   = data?.promptFeedback?.blockReason || '';
+      const hasCandidates = Array.isArray(data?.candidates) && data.candidates.length > 0;
+      let detail = '';
+      if(blockReason){
+        detail = '（セーフティブロック：' + blockReason + '）';
+      } else if(finishReason && finishReason !== 'STOP'){
+        detail = '（終了理由：' + finishReason + '）';
+      } else if(!hasCandidates){
+        detail = '（候補が0件でした。検索結果が見つからなかった可能性があります）';
+      } else {
+        detail = '（原因不明。コンソールの [Gemini empty response] を確認してください）';
+      }
+      throw new Error('Geminiからの応答が空でした' + detail + '。もう一度試すか、URLや条件を見直してください');
     }
     if(finishReason === 'MAX_TOKENS'){
       console.log('[Gemini raw response - truncated]', raw);
@@ -1307,7 +1340,12 @@ async function _geminiAutoGenerate(sid, gid){
     }
     // タイトル整形をコード側で確実に適用（AIの遵守に依存しない）
     const g2 = db.series.find(x=>x.id===sid)?.groups.find(x=>x.id===gid);
-    const fixedJson = json.map(c => ({...c, title: _applyTitleRule(c.title, g2?.ai)}));
+    const titledJson = json.map(c => ({...c, title: _applyTitleRule(c.title, g2?.ai)}));
+    // excludeRules による強制フィルタ（Geminiの判断に頼らず確実に除外）
+    const { kept: fixedJson, removed } = _filterByExcludeRules(titledJson, g2?.ai);
+    if(removed.length > 0){
+      console.log('[除外フィルタで弾いた候補]', removed.map(r => r.title + '（' + r._excludedBy + '）'));
+    }
     _incrementUsage();
     _renderGeminiSettings();
     openBulkCandidateModal(sid, null, gid);
@@ -1315,7 +1353,8 @@ async function _geminiAutoGenerate(sid, gid){
       const ta = document.getElementById('bulkJsonInput');
       if(ta){ ta.value = JSON.stringify(fixedJson, null, 2); ta.classList.remove('error'); _onBulkJsonInput(ta); }
     }, 80);
-    showToast('✅ Geminiから ' + fixedJson.length + '件 取得しました');
+    const excludedMsg = removed.length > 0 ? `（除外条件で${removed.length}件を自動除外）` : '';
+    showToast('✅ Geminiから ' + fixedJson.length + '件 取得しました' + excludedMsg);
   } catch(e){
     _showGeminiError(gid, e.message);
   } finally{
@@ -1960,6 +1999,21 @@ function _onBulkJsonInput(ta){
   if(groupForRule && groupForRule.ai && groupForRule.ai.titleRuleWord){
     parsed = parsed.map(c => ({...c, title: _applyTitleRule(c.title, groupForRule.ai)}));
   }
+
+  // excludeRules による強制フィルタ（Geminiの判断に頼らず確実に除外）
+  let excludedCount = 0;
+  if(groupForRule && groupForRule.ai && groupForRule.ai.excludeRules){
+    const { kept, removed } = _filterByExcludeRules(parsed, groupForRule.ai);
+    parsed = kept;
+    excludedCount = removed.length;
+    if(removed.length > 0){
+      console.log('[除外フィルタで弾いた候補]', removed.map(r => r.title + '（' + r._excludedBy + '）'));
+    }
+  }
+  if(errEl) errEl.textContent = excludedCount > 0
+    ? `（除外条件で${excludedCount}件を自動除外しました）`
+    : '';
+  if(errEl) errEl.style.color = excludedCount > 0 ? 'var(--br3)' : '';
 
   bulkCandidates = parsed.slice().sort((a,b) =>
     (a.publishedDate||'').localeCompare(b.publishedDate||'')
