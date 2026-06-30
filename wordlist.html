@@ -137,37 +137,15 @@
             color: #ef4444;
         }
 
-        /* 🧩 クイズモードのスタイル */
-        .quiz-section {
-            background: #edf2f7;
-            padding: 20px;
-            border-radius: 12px;
-            margin-top: 30px;
-            text-align: center;
-            box-sizing: border-box;
-        }
-        .quiz-card {
-            background: white;
-            padding: 20px;
+        /* 💡 変更ポイント：単語リストエリアに高さ制限をかけ、スクロール可能に */
+        .scroll-box {
+            max-height: 380px; /* iPadで見やすい絶妙な高さに制限 */
+            overflow-y: auto;  /* はみ出したら自動でスクロールバーを出す */
+            padding-right: 5px;
+            margin-bottom: 20px;
             border-radius: 10px;
-            margin: 15px 0;
-            min-height: 80px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .quiz-word {
-            font-size: 22px;
-            font-weight: bold;
-            margin: 0;
-        }
-        .quiz-meaning {
-            font-size: 16px;
-            color: var(--accent);
-            margin-top: 10px;
-            font-weight: bold;
+            /* スクロール感を滑らかにする（iOS用） */
+            -webkit-overflow-scrolling: touch; 
         }
 
         .word-list {
@@ -223,6 +201,40 @@
             padding: 4px 8px;
             font-size: 12px;
         }
+
+        /* クイズモードのスタイル */
+        .quiz-section {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 10px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .quiz-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .quiz-word {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .quiz-meaning {
+            font-size: 16px;
+            color: var(--accent);
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
         .backup-zone {
             display: flex;
             justify-content: space-between;
@@ -314,7 +326,9 @@
         </div>
     </div>
 
-    <ul id="wordList" class="word-list"></ul>
+    <div class="scroll-box">
+        <ul id="wordList" class="word-list"></ul>
+    </div>
 
     <div class="quiz-section">
         <h3>🧩 単語テスト（クイズモード）</h3>
@@ -509,10 +523,10 @@
         }
 
         localStorage.setItem('vocab_words', JSON.stringify(words));
-        window.clearForm();
-        window.toggleForm();
-        window.renderWords();
-        window.showToast("💾 保存しました");
+        clearForm();
+        toggleForm();
+        renderWords();
+        showToast("💾 保存しました");
     };
 
     window.renderWords = function() {
@@ -547,7 +561,6 @@
         });
     };
 
-    // 🧩 クイズ用の処理
     let currentQuizWord = null;
     window.startQuiz = function() {
         if (words.length === 0) {
