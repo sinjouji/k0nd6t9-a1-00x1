@@ -298,10 +298,10 @@
 <div class="container">
     <div class="header-row">
         <h1>📚 My英単語帳 Pro</h1>
-        <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 鍵設定</button>
+        <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 🔑鍵設定</button>
     </div>
 
-    <!-- 🔑 設定パネル（APIキー管理） -->
+    <!-- 設定パネル -->
     <div id="settingsPanel" class="settings-panel">
         <h3>🔑 Gemini API 認証管理</h3>
         <div class="form-group">
@@ -514,7 +514,6 @@
         window.renderChips();
     };
 
-    // 💡 共通のGoogle直翻訳関数
     async function directGoogleTranslate(text) {
         const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(text)}`;
         const transRes = await fetch(translateUrl);
@@ -582,16 +581,15 @@
                 autoBtn.disabled = false;
             }
         } else {
-            // 💡 手動モード（改良版：熟語・短文対応）
+            // 手動モード（改良版：例文の自動取得＆和訳補完対応）
             try {
-                // スペースが含まれる場合は最初からダイレクト翻訳にスキップ
                 if (word.includes(" ")) {
                     const translated = await directGoogleTranslate(word);
                     document.getElementById('meaningInput').value = translated;
-                    document.getElementById('exampleInput').value = ""; // フレーズそのものの場合は例文は空欄に
+                    // 短文・熟語の場合は、そのフレーズ自体を例文エリアのベースとして入れてあげる
+                    document.getElementById('exampleInput').value = word; 
                     window.showToast("✨ 熟語・短文を翻訳しました！");
                 } else {
-                    // 単語の場合はまず辞書APIをトライ
                     const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
                     if (!dictRes.ok) throw new Error("Not Found");
                     const dictData = await dictRes.json();
@@ -603,17 +601,25 @@
                     let rawText = keywords.length > 0 ? keywords.join(', ') : dictData[0].meanings[0].definitions[0].definition;
                     const example = dictData[0].meanings[0].definitions[0].example || "";
 
+                    // 意味を翻訳
                     const translatedJapanese = await directGoogleTranslate(rawText);
                     document.getElementById('meaningInput').value = `【${word}】 ` + translatedJapanese;
-                    document.getElementById('exampleInput').value = example;
-                    window.showToast("✨ 単語の翻訳を自動入力しました！");
+                    
+                    // 💡 変更ポイント：辞書API側に例文があれば、それもGoogle翻訳にかける
+                    if (example) {
+                        const translatedExample = await directGoogleTranslate(example);
+                        document.getElementById('exampleInput').value = `[${translatedExample}] ${example}`;
+                    } else {
+                        document.getElementById('exampleInput').value = "";
+                    }
+
+                    window.showToast("✨ 例文まで自動入力しました！");
                 }
             } catch (e) {
-                // 辞書APIがエラーでも、ダイレクト翻訳で救済
                 try {
                     const translated = await directGoogleTranslate(word);
                     document.getElementById('meaningInput').value = translated;
-                    document.getElementById('exampleInput').value = "";
+                    document.getElementById('exampleInput').value = word;
                     window.showToast("✨ 翻訳を自動入力しました！");
                 } catch(err) {
                     window.showToast("⚠️ 翻訳に失敗しました");
