@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My英単語帳</title>
+    <style>
+        :root {
+            --bg: #f7f6f5;
+            --card-bg: #ffffff;
+            --text-main: #334e3b;
+            --text-sub: #6b7d70;
+            --accent: #4a7d59;
+            --accent-light: rgba(74, 125, 89, 0.1);
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        h1 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+        
+        /* 検索とトグルボタンの並び */
+        .controls-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .search-bar {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+        }
+        .btn-toggle {
+            background-color: var(--accent);
+            color: white;
+            padding: 0 15px;
+            font-size: 18px;
+        }
+
+        /* アコーディオン（トグル）収納エリア */
+        .form-section {
+            background: var(--card-bg);
+            padding: 0 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-bottom: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+            opacity: 0;
+        }
+        .form-section.open {
+            padding: 20px;
+            max-height: 500px; /* フォームが十分収まる高さ */
+            margin-bottom: 20px;
+            opacity: 1;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            resize: vertical;
+        }
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-accent {
+            background-color: var(--accent);
+            color: white;
+        }
+        .btn-accent:hover { background-color: #3b6347; }
+        .btn-sub {
+            background-color: #e2e8f0;
+            color: var(--text-main);
+        }
+        .btn-danger {
+            background-color: #fee2e2;
+            color: #ef4444;
+        }
+        .word-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .word-card {
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .word-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 18px;
+        }
+        .word-info .meaning {
+            margin: 0 0 5px 0;
+            font-size: 15px;
+        }
+        .word-info .example {
+            margin: 0;
+            font-size: 13px;
+            color: var(--text-sub);
+            font-style: italic;
+        }
+        .word-meta {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .source-badge {
+            background-color: var(--accent-light);
+            color: var(--accent);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .action-btns {
+            display: flex;
+            gap: 5px;
+        }
+        .action-btns button {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .backup-zone {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding: 10px;
+            font-size: 12px;
+        }
+        .file-input-label {
+            padding: 10px 15px;
+            background: #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        #fileInput { display: none; }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: none;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📚 My英単語帳</h1>
+    
+    <div class="controls-row">
+        <input type="text" id="searchBar" class="search-bar" placeholder="単語や作品名で検索..." oninput="renderWords()">
+        <button class="btn-toggle" id="toggleFormBtn" onclick="toggleForm()" title="登録フォームを開閉">＋</button>
+    </div>
+
+    <div id="formSection" class="form-section">
+        <input type="hidden" id="editId">
+        <div class="form-group">
+            <label>英単語</label>
+            <div class="input-row">
+                <input type="text" id="wordInput" placeholder="example">
+                <button type="button" class="btn-sub" id="autoBtn" onclick="fetchWordAndTranslate()">自動入力</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>意味（自動で日本語になります）</label>
+            <textarea id="meaningInput" rows="2" placeholder="ここに意味が入ります"></textarea>
+        </div>
+        <div class="form-group">
+            <label>例文</label>
+            <textarea id="exampleInput" rows="2" placeholder="例文（英語）"></textarea>
+        </div>
+        <div class="form-group">
+            <label>出典作品</label>
+            <input type="text" id="sourceInput" placeholder="映画名、本など">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-accent" style="flex: 1;" onclick="saveWord()">保存する</button>
+            <button class="btn-sub" onclick="clearForm(); toggleForm();">キャンセル</button>
+        </div>
+    </div>
+
+    <ul id="wordList" class="word-list"></ul>
+
+    <div class="backup-zone">
+        <button class="btn-sub" onclick="exportJSON()">📥 JSON書き出し</button>
+        <label class="file-input-label">
+            📤 JSON読み込み
+            <input type="file" id="fileInput" accept=".json" onchange="importJSON(this)">
+        </label>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+    // 💡 初期データのバグ修正：ローカルストレージが空の時だけ初期データを「保存された状態」でセットする
+    const defaultWords = [
+        { id: "default-apple", word: "apple", meaning: "リンゴ：赤または緑の皮を持つ丸い果物。", example: "I ate a fresh apple.", source: "日常会話" },
+        { id: "default-serendipity", word: "serendipity", meaning: "思いがけない幸運：探していなかった価値あるものを偶然見つけること。", example: "We found the charming little restaurant by pure serendipity.", source: "映画A" }
+    ];
+
+    if (!localStorage.getItem('vocab_words')) {
+        localStorage.setItem('vocab_words', JSON.stringify(defaultWords));
+    }
+
+    let words = JSON.parse(localStorage.getItem('vocab_words'));
+
+    // フォームの開閉トグル
+    function toggleForm(forceOpen = false) {
+        const form = document.getElementById('formSection');
+        const btn = document.getElementById('toggleFormBtn');
+        
+        if (form.classList.contains('open') && !forceOpen) {
+            form.classList.remove('open');
+            btn.innerText = "＋";
+            btn.style.backgroundColor = "var(--accent)";
+        } else {
+            form.classList.add('open');
+            btn.innerText = "✕";
+            btn.style.backgroundColor = "#6b7d70";
+        }
+    }
+
+    // 🌐 辞書データ取得 ＆ 日本語自動翻訳
+    async function fetchWordAndTranslate() {
+        const word = document.getElementById('wordInput').value.trim();
+        if (!word) return;
+
+        const autoBtn = document.getElementById('autoBtn');
+        autoBtn.innerText = "通信中...";
+        autoBtn.disabled = true;
+
+        try {
+            const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+            if (!dictRes.ok) throw new Error();
+            const dictData = await dictRes.json();
+            
+            const rawDefinition = dictData[0].meanings[0].definitions[0].definition;
+            const example = dictData[0].meanings[0].definitions[0].example || "";
+
+            const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(rawDefinition)}`;
+            const transRes = await fetch(translateUrl);
+            const transData = await transRes.json();
+            const translatedJapanese = transData[0][0][0];
+
+            document.getElementById('meaningInput').value = translatedJapanese;
+            document.getElementById('exampleInput').value = example;
+            showToast("✨ 日本語訳を自動入力しました！");
+
+        } catch (e) {
+            showToast("⚠️ データが見つからないか、翻訳に失敗しました");
+        } finally {
+            autoBtn.innerText = "自動入力";
+            autoBtn.disabled = false;
+        }
+    }
+
+    // データ保存
+    function saveWord() {
+        const id = document.getElementById('editId').value;
+        const word = document.getElementById('wordInput').value.trim();
+        const meaning = document.getElementById('meaningInput').value.trim();
+        const example = document.getElementById('exampleInput').value.trim();
+        const source = document.getElementById('sourceInput').value.trim();
+
+        if (!word) { showToast("⚠️ 単語を入力してください"); return; }
+
+        if (id) {
+            const index = words.findIndex(w => w.id === id);
+            if (index !== -1) words[index] = { id, word, meaning, example, source };
+        } else {
+            words.push({ id: crypto.randomUUID(), word, meaning, example, source });
+        }
+
+        localStorage.setItem('vocab_words', JSON.stringify(words));
+        clearForm();
+        toggleForm(); // 保存したら自動で閉じる
+        renderWords();
+        showToast("💾 保存しました");
+    }
+
+    // 表示処理
+    function renderWords() {
+        const query = document.getElementById('searchBar').value.toLowerCase();
+        const listElement = document.getElementById('wordList');
+        listElement.innerHTML = '';
+
+        const filtered = words.filter(w => 
+            w.word.toLowerCase().includes(query) || 
+            w.meaning.toLowerCase().includes(query) || 
+            (w.source && w.source.toLowerCase().includes(query))
+        );
+
+        filtered.forEach(w => {
+            const li = document.createElement('li');
+            li.className = 'word-card';
+            li.innerHTML = `
+                <div class="word-info">
+                    <h3>${w.word}</h3>
+                    <p class="meaning">${w.meaning}</p>
+                    ${w.example ? `<p class="example">${w.example}</p>` : ''}
+                </div>
+                <div class="word-meta">
+                    ${w.source ? `<span class="source-badge">${w.source}</span>` : ''}
+                    <div class="action-btns">
+                        <button class="btn-sub" onclick="editWord('${w.id}')">編集</button>
+                        <button class="btn-danger" onclick="deleteWord('${w.id}')">削除</button>
+                    </div>
+                </div>
+            `;
+            listElement.appendChild(li);
+        });
+    }
+
+    // 編集モード
+    function editWord(id) {
+        const w = words.find(w => w.id === id);
+        if (!w) return;
+        document.getElementById('editId').value = w.id;
+        document.getElementById('wordInput').value = w.word;
+        document.getElementById('meaningInput').value = w.meaning;
+        document.getElementById('exampleInput').value = w.example || '';
+        document.getElementById('sourceInput').value = w.source || '';
+        
+        toggleForm(true); // フォームを強制的に開く
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    </div>
+
+    function deleteWord(id) {
+        if(confirm("本当に削除しますか？")) {
+            words = words.filter(w => w.id !== id);
+            localStorage.setItem('vocab_words', JSON.stringify(words));
+            renderWords();
+            showToast("🗑️ 削除しました");
+        }
+    }
+
+    function clearForm() {
+        document.getElementById('editId').value = '';
+        document.getElementById('wordInput').value = '';
+        document.getElementById('meaningInput').value = '';
+        document.getElementById('exampleInput').value = '';
+        document.getElementById('sourceInput').value = '';
+    }
+
+    // バックアップ：書き出し
+    function exportJSON() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
+        const downloadAnchor = document.createElement('a');
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", "vocab_words.json");
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    }
+
+    // バックアップ：読み込み
+    function importJSON(input) {
+        const file = input.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const imported = JSON.parse(e.target.result);
+                if (Array.isArray(imported)) {
+                    words = imported;
+                    localStorage.setItem('vocab_words', JSON.stringify(words));
+                    renderWords();
+                    showToast(`📥 ${words.length}件を取り込みました！`);
+                }
+            } catch(err) {
+                showToast("⚠️ 正しいJSONファイルではありません");
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 2000);
+    }
+
+    // 初期表示
+    renderWords();
+</script>
+</body>
+</html>
