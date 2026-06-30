@@ -86,7 +86,7 @@
         }
         .form-section.open {
             padding: 20px;
-            max-height: 750px; /* チップエリア追加に伴い少し広げました */
+            max-height: 750px;
             margin-bottom: 20px;
             opacity: 1;
         }
@@ -137,9 +137,9 @@
             color: #ef4444;
         }
 
-        /* 💡 変更ポイント：作品名チップ用エリアのスタイル */
+        /* 作品名チップ用エリア */
         .chip-container {
-            max-height: 75px; /* チップが増えても3行分くらいでスクロール制限 */
+            max-height: 75px;
             overflow-y: auto;
             display: flex;
             flex-wrap: wrap;
@@ -301,6 +301,7 @@
         <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 鍵設定</button>
     </div>
 
+    <!-- 🔑 設定パネル（APIキー管理） -->
     <div id="settingsPanel" class="settings-panel">
         <h3>🔑 Gemini API 認証管理</h3>
         <div class="form-group">
@@ -320,6 +321,7 @@
         <button class="btn-toggle" id="toggleFormBtn" onclick="window.toggleForm()">＋</button>
     </div>
 
+    <!-- 📝 単語登録・編集エリア -->
     <div id="formSection" class="form-section">
         <input type="hidden" id="editId">
         
@@ -332,9 +334,9 @@
         </div>
 
         <div class="form-group">
-            <label>英単語</label>
+            <label>英単語 / 熟語・フレーズ</label>
             <div class="input-row">
-                <input type="text" id="wordInput" placeholder="example">
+                <input type="text" id="wordInput" placeholder="example や a lot of など">
                 <button type="button" class="btn-sub" id="autoBtn" onclick="window.fetchWordAndTranslate()">自動入力</button>
             </div>
         </div>
@@ -350,8 +352,7 @@
         <div class="form-group">
             <label>出典作品（カンマ区切りで複数可）</label>
             <input type="text" id="sourceInput" placeholder="映画名、本など" oninput="window.syncChipsFromInput()">
-            <div id="chipContainer" class="chip-container">
-                </div>
+            <div id="chipContainer" class="chip-container"></div>
         </div>
 
         <div style="display: flex; gap: 10px; margin-top: 15px;">
@@ -360,10 +361,12 @@
         </div>
     </div>
 
+    <!-- 単語リスト表示エリア -->
     <div class="scroll-box">
         <ul id="wordList" class="word-list"></ul>
     </div>
 
+    <!-- クイズモードエリア -->
     <div class="quiz-section">
         <h3>🧩 単語テスト（クイズモード）</h3>
         <button class="btn-accent" onclick="window.startQuiz()">クイズを始める</button>
@@ -411,7 +414,6 @@
         count: parseInt(localStorage.getItem(getTodayKey())) || 0
     };
 
-    // UIへ設定を反映
     document.getElementById('inlineTranslateMode').value = settings.mode;
     document.getElementById('geminiApiKey').value = settings.apiKey;
     document.getElementById('apiLimit').value = settings.limit;
@@ -429,7 +431,6 @@
         window.updateCounterLabel();
     };
 
-    // 💡 インライン用のモードセーブ
     window.saveInlineMode = function() {
         settings.mode = document.getElementById('inlineTranslateMode').value;
         localStorage.setItem('vocab_mode', settings.mode);
@@ -451,20 +452,17 @@
             form.classList.add('open');
             btn.innerText = "✕";
             btn.style.backgroundColor = "#6b7d70";
-            window.renderChips(); // 開いた瞬間にチップを最新にする
+            window.renderChips();
         }
     };
 
-    // 💡 既出の作品名チップを生成する処理
     window.renderChips = function() {
         const container = document.getElementById('chipContainer');
         container.innerHTML = '';
         
-        // 全単語から作品名を集めて、重複なし・空文字なしのリストを作る
         const allSources = [];
         words.forEach(w => {
             if (w.source) {
-                // カンマ区切りで登録されている場合も想定して分解
                 w.source.split(/[,，]/).forEach(s => {
                     const trimmed = s.trim();
                     if (trimmed && !allSources.includes(trimmed)) {
@@ -479,7 +477,6 @@
             return;
         }
 
-        // 現在テキストボックスに入力されている作品名のリスト
         const currentInputValue = document.getElementById('sourceInput').value;
         const currentSelected = currentInputValue.split(/[,，]/).map(s => s.trim());
 
@@ -488,7 +485,6 @@
             chip.className = 'source-chip';
             chip.innerText = source;
             
-            // すでに選択されている場合は色を変える
             if (currentSelected.includes(source)) {
                 chip.classList.add('selected');
             }
@@ -500,27 +496,31 @@
         });
     };
 
-    // 💡 チップをタップした時の複数選択・解除ロジック
     window.toggleChipSelection = function(sourceName) {
         const input = document.getElementById('sourceInput');
         let currentSources = input.value.split(/[,，]/).map(s => s.trim()).filter(s => s !== "");
 
         if (currentSources.includes(sourceName)) {
-            // すでにある場合は削除（解除）
             currentSources = currentSources.filter(s => s !== sourceName);
         } else {
-            // ない場合は追加（複数選択）
             currentSources.push(sourceName);
         }
 
         input.value = currentSources.join(', ');
-        window.renderChips(); // チップの見た目（色）を更新
+        window.renderChips();
     };
 
-    // 💡 手動入力時にチップの色をリアルタイム連動させる
     window.syncChipsFromInput = function() {
         window.renderChips();
     };
+
+    // 💡 共通のGoogle直翻訳関数
+    async function directGoogleTranslate(text) {
+        const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(text)}`;
+        const transRes = await fetch(translateUrl);
+        const transData = await transRes.json();
+        return transData[0][0][0];
+    }
 
     window.fetchWordAndTranslate = async function() {
         const word = document.getElementById('wordInput').value.trim();
@@ -547,12 +547,12 @@
 
             try {
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${settings.apiKey}`;
-                const prompt = `以下の英単語について、単語帳用のデータをJSON形式のみで返してください。余計な説明文や\`\`\`jsonのようなマークアップは一切含めず、以下のJSONフォーマットを完全に守ってください。
+                const prompt = `以下の英単語または熟語・短文について、単語帳用のデータをJSON形式のみで返してください。余計な説明文や\`\`\`jsonのようなマークアップは一切含めず、以下のJSONフォーマットを完全に守ってください。
 {
-  "meaning": "ここに日本語での短く分かりやすい意味（学名などは含めず、一般的な訳）",
-  "example": "ここにその単語を使った、短くて実用的な英語の例文"
+  "meaning": "ここに日本語での短く分かりやすい意味",
+  "example": "引数の英語を使った、短くて実用的な英語の例文（引数がすでに文章の場合は、それをベースにしたバリエーションか、関連する実用文）"
 }
-対象単語: "${word}"`;
+対象: "${word}"`;
 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -582,28 +582,42 @@
                 autoBtn.disabled = false;
             }
         } else {
+            // 💡 手動モード（改良版：熟語・短文対応）
             try {
-                const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-                if (!dictRes.ok) throw new Error();
-                const dictData = await dictRes.json();
-                
-                let keywords = [];
-                if (dictData[0].meanings[0].synonyms && dictData[0].meanings[0].synonyms.length > 0) {
-                    keywords = dictData[0].meanings[0].synonyms.slice(0, 3);
+                // スペースが含まれる場合は最初からダイレクト翻訳にスキップ
+                if (word.includes(" ")) {
+                    const translated = await directGoogleTranslate(word);
+                    document.getElementById('meaningInput').value = translated;
+                    document.getElementById('exampleInput').value = ""; // フレーズそのものの場合は例文は空欄に
+                    window.showToast("✨ 熟語・短文を翻訳しました！");
+                } else {
+                    // 単語の場合はまず辞書APIをトライ
+                    const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
+                    if (!dictRes.ok) throw new Error("Not Found");
+                    const dictData = await dictRes.json();
+                    
+                    let keywords = [];
+                    if (dictData[0].meanings[0].synonyms && dictData[0].meanings[0].synonyms.length > 0) {
+                        keywords = dictData[0].meanings[0].synonyms.slice(0, 3);
+                    }
+                    let rawText = keywords.length > 0 ? keywords.join(', ') : dictData[0].meanings[0].definitions[0].definition;
+                    const example = dictData[0].meanings[0].definitions[0].example || "";
+
+                    const translatedJapanese = await directGoogleTranslate(rawText);
+                    document.getElementById('meaningInput').value = `【${word}】 ` + translatedJapanese;
+                    document.getElementById('exampleInput').value = example;
+                    window.showToast("✨ 単語の翻訳を自動入力しました！");
                 }
-                let rawText = keywords.length > 0 ? keywords.join(', ') : dictData[0].meanings[0].definitions[0].definition;
-                const example = dictData[0].meanings[0].definitions[0].example || "";
-
-                const translateUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=ja&dt=t&q=${encodeURIComponent(rawText)}`;
-                const transRes = await fetch(translateUrl);
-                const transData = await transRes.json();
-                const translatedJapanese = transData[0][0][0];
-
-                document.getElementById('meaningInput').value = `【${word}】 ` + translatedJapanese;
-                document.getElementById('exampleInput').value = example;
-                window.showToast("✨ 翻訳を自動入力しました！");
             } catch (e) {
-                window.showToast("⚠️ 辞書データが見つかりませんでした");
+                // 辞書APIがエラーでも、ダイレクト翻訳で救済
+                try {
+                    const translated = await directGoogleTranslate(word);
+                    document.getElementById('meaningInput').value = translated;
+                    document.getElementById('exampleInput').value = "";
+                    window.showToast("✨ 翻訳を自動入力しました！");
+                } catch(err) {
+                    window.showToast("⚠️ 翻訳に失敗しました");
+                }
             } finally {
                 autoBtn.innerText = "自動入力";
                 autoBtn.disabled = false;
@@ -618,7 +632,7 @@
         const example = document.getElementById('exampleInput').value.trim();
         const source = document.getElementById('sourceInput').value.trim();
 
-        if (!word) { window.showToast("⚠️ 単語を入力してください"); return; }
+        if (!word) { window.showToast("⚠️ 内容を入力してください"); return; }
 
         if (id) {
             const index = words.findIndex(w => w.id === id);
@@ -650,7 +664,6 @@
             const li = document.createElement('li');
             li.className = 'word-card';
             
-            // 複数バッジ対応表示（カンマで分割してバッジを複数並べる）
             let badgesHtml = '';
             if (w.source) {
                 w.source.split(/[,，]/).forEach(s => {
@@ -711,7 +724,7 @@
         document.getElementById('sourceInput').value = w.source || '';
         
         window.toggleForm(true);
-        window.renderChips(); // 編集時にも現在の作品名を反映させてチップに色をつける
+        window.renderChips();
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
