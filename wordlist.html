@@ -61,7 +61,7 @@
             cursor: pointer;
         }
 
-        /* 設定エリアのスタイル */
+        /* ⚙️ 設定エリア */
         .settings-panel {
             background: #e2e8f0;
             padding: 15px;
@@ -86,13 +86,13 @@
         }
         .form-section.open {
             padding: 20px;
-            max-height: 600px;
+            max-height: 750px; /* チップエリア追加に伴い少し広げました */
             margin-bottom: 20px;
             opacity: 1;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
         .form-group label {
             display: block;
@@ -137,15 +137,43 @@
             color: #ef4444;
         }
 
-        /* 💡 変更ポイント：単語リストエリアに高さ制限をかけ、スクロール可能に */
+        /* 💡 変更ポイント：作品名チップ用エリアのスタイル */
+        .chip-container {
+            max-height: 75px; /* チップが増えても3行分くらいでスクロール制限 */
+            overflow-y: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding: 4px;
+            margin-top: 6px;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            background: #f8fafc;
+            -webkit-overflow-scrolling: touch;
+        }
+        .source-chip {
+            font-size: 12px;
+            padding: 4px 10px;
+            background: #e2e8f0;
+            color: var(--text-main);
+            border-radius: 15px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+        }
+        .source-chip.selected {
+            background: var(--accent);
+            color: white;
+        }
+
+        /* リストエリアの制限 */
         .scroll-box {
-            max-height: 380px; /* iPadで見やすい絶妙な高さに制限 */
-            overflow-y: auto;  /* はみ出したら自動でスクロールバーを出す */
+            max-height: 380px;
+            overflow-y: auto;
             padding-right: 5px;
             margin-bottom: 20px;
             border-radius: 10px;
-            /* スクロール感を滑らかにする（iOS用） */
-            -webkit-overflow-scrolling: touch; 
+            -webkit-overflow-scrolling: touch;
         }
 
         .word-list {
@@ -202,7 +230,7 @@
             font-size: 12px;
         }
 
-        /* クイズモードのスタイル */
+        /* クイズモード */
         .quiz-section {
             background: #edf2f7;
             padding: 20px;
@@ -270,24 +298,17 @@
 <div class="container">
     <div class="header-row">
         <h1>📚 My英単語帳 Pro</h1>
-        <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 設定</button>
+        <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 鍵設定</button>
     </div>
 
     <div id="settingsPanel" class="settings-panel">
-        <h3>⚙️ 翻訳・AI設定</h3>
-        <div class="form-group">
-            <label>翻訳モード</label>
-            <select id="translateMode" onchange="window.saveSettings()">
-                <option value="google">手動 (従来のGoogle翻訳API)</option>
-                <option value="gemini">AI自動生成 (Gemini API / 完全無料枠)</option>
-            </select>
-        </div>
+        <h3>🔑 Gemini API 認証管理</h3>
         <div class="form-group">
             <label>Gemini API キー</label>
             <input type="password" id="geminiApiKey" placeholder="AI Studioで取得した AIzaSy... を入力" onchange="window.saveSettings()">
         </div>
         <div class="form-group">
-            <label>1日のAPI使用回数上限（使いすぎ防止）</label>
+            <label>1日のAPI使用回数上限</label>
             <input type="number" id="apiLimit" value="50" onchange="window.saveSettings()">
             <small style="color: #666;" id="apiCounterLabel">本日の消費: 0 / 50 回</small>
         </div>
@@ -301,6 +322,15 @@
 
     <div id="formSection" class="form-section">
         <input type="hidden" id="editId">
+        
+        <div class="form-group" style="background: #f1f5f9; padding: 10px; border-radius: 8px;">
+            <label style="margin-bottom: 8px;">🤖 翻訳エンジン切り替え</label>
+            <select id="inlineTranslateMode" onchange="window.saveInlineMode()">
+                <option value="google">手動 (従来のGoogle翻訳API)</option>
+                <option value="gemini">AI自動生成 (Gemini API / 完全無料枠)</option>
+            </select>
+        </div>
+
         <div class="form-group">
             <label>英単語</label>
             <div class="input-row">
@@ -316,11 +346,15 @@
             <label>例文</label>
             <textarea id="exampleInput" rows="2" placeholder="例文（英語）"></textarea>
         </div>
+        
         <div class="form-group">
-            <label>出典作品</label>
-            <input type="text" id="sourceInput" placeholder="映画名、本など">
+            <label>出典作品（カンマ区切りで複数可）</label>
+            <input type="text" id="sourceInput" placeholder="映画名、本など" oninput="window.syncChipsFromInput()">
+            <div id="chipContainer" class="chip-container">
+                </div>
         </div>
-        <div style="display: flex; gap: 10px;">
+
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
             <button class="btn-accent" style="flex: 1;" onclick="window.saveWord()">保存する</button>
             <button class="btn-sub" onclick="window.clearForm(); window.toggleForm();">キャンセル</button>
         </div>
@@ -377,7 +411,8 @@
         count: parseInt(localStorage.getItem(getTodayKey())) || 0
     };
 
-    document.getElementById('translateMode').value = settings.mode;
+    // UIへ設定を反映
+    document.getElementById('inlineTranslateMode').value = settings.mode;
     document.getElementById('geminiApiKey').value = settings.apiKey;
     document.getElementById('apiLimit').value = settings.limit;
     
@@ -387,14 +422,17 @@
     window.updateCounterLabel();
 
     window.saveSettings = function() {
-        settings.mode = document.getElementById('translateMode').value;
         settings.apiKey = document.getElementById('geminiApiKey').value;
         settings.limit = parseInt(document.getElementById('apiLimit').value) || 50;
-        
-        localStorage.setItem('vocab_mode', settings.mode);
         localStorage.setItem('vocab_gemini_key', settings.apiKey);
         localStorage.setItem('vocab_api_limit', settings.limit);
         window.updateCounterLabel();
+    };
+
+    // 💡 インライン用のモードセーブ
+    window.saveInlineMode = function() {
+        settings.mode = document.getElementById('inlineTranslateMode').value;
+        localStorage.setItem('vocab_mode', settings.mode);
     };
 
     window.toggleSettings = function() {
@@ -413,7 +451,75 @@
             form.classList.add('open');
             btn.innerText = "✕";
             btn.style.backgroundColor = "#6b7d70";
+            window.renderChips(); // 開いた瞬間にチップを最新にする
         }
+    };
+
+    // 💡 既出の作品名チップを生成する処理
+    window.renderChips = function() {
+        const container = document.getElementById('chipContainer');
+        container.innerHTML = '';
+        
+        // 全単語から作品名を集めて、重複なし・空文字なしのリストを作る
+        const allSources = [];
+        words.forEach(w => {
+            if (w.source) {
+                // カンマ区切りで登録されている場合も想定して分解
+                w.source.split(/[,，]/).forEach(s => {
+                    const trimmed = s.trim();
+                    if (trimmed && !allSources.includes(trimmed)) {
+                        allSources.push(trimmed);
+                    }
+                });
+            }
+        });
+
+        if (allSources.length === 0) {
+            container.innerHTML = '<span style="font-size:12px; color:#94a3b8; padding:4px;">既出の作品名はここに自動で並びます</span>';
+            return;
+        }
+
+        // 現在テキストボックスに入力されている作品名のリスト
+        const currentInputValue = document.getElementById('sourceInput').value;
+        const currentSelected = currentInputValue.split(/[,，]/).map(s => s.trim());
+
+        allSources.forEach(source => {
+            const chip = document.createElement('span');
+            chip.className = 'source-chip';
+            chip.innerText = source;
+            
+            // すでに選択されている場合は色を変える
+            if (currentSelected.includes(source)) {
+                chip.classList.add('selected');
+            }
+
+            chip.onclick = function() {
+                window.toggleChipSelection(source);
+            };
+            container.appendChild(chip);
+        });
+    };
+
+    // 💡 チップをタップした時の複数選択・解除ロジック
+    window.toggleChipSelection = function(sourceName) {
+        const input = document.getElementById('sourceInput');
+        let currentSources = input.value.split(/[,，]/).map(s => s.trim()).filter(s => s !== "");
+
+        if (currentSources.includes(sourceName)) {
+            // すでにある場合は削除（解除）
+            currentSources = currentSources.filter(s => s !== sourceName);
+        } else {
+            // ない場合は追加（複数選択）
+            currentSources.push(sourceName);
+        }
+
+        input.value = currentSources.join(', ');
+        window.renderChips(); // チップの見た目（色）を更新
+    };
+
+    // 💡 手動入力時にチップの色をリアルタイム連動させる
+    window.syncChipsFromInput = function() {
+        window.renderChips();
     };
 
     window.fetchWordAndTranslate = async function() {
@@ -426,7 +532,7 @@
 
         if (settings.mode === 'gemini') {
             if (!settings.apiKey) {
-                window.showToast("⚠️ ⚙️設定からGeminiのAPIキーを入力してください");
+                window.showToast("⚠️ 右上の『鍵設定』からGeminiのAPIキーを入力してください");
                 autoBtn.innerText = "自動入力";
                 autoBtn.disabled = false;
                 window.toggleSettings();
@@ -523,10 +629,10 @@
         }
 
         localStorage.setItem('vocab_words', JSON.stringify(words));
-        clearForm();
-        toggleForm();
-        renderWords();
-        showToast("💾 保存しました");
+        window.clearForm();
+        window.toggleForm();
+        window.renderWords();
+        window.showToast("💾 保存しました");
     };
 
     window.renderWords = function() {
@@ -543,6 +649,15 @@
         filtered.forEach(w => {
             const li = document.createElement('li');
             li.className = 'word-card';
+            
+            // 複数バッジ対応表示（カンマで分割してバッジを複数並べる）
+            let badgesHtml = '';
+            if (w.source) {
+                w.source.split(/[,，]/).forEach(s => {
+                    if(s.trim()) badgesHtml += `<span class="source-badge">${s.trim()}</span> `;
+                });
+            }
+
             li.innerHTML = `
                 <div class="word-info">
                     <h3>${w.word}</h3>
@@ -550,8 +665,8 @@
                     ${w.example ? `<p class="example">${w.example}</p>` : ''}
                 </div>
                 <div class="word-meta">
-                    ${w.source ? `<span class="source-badge">${w.source}</span>` : ''}
-                    <div class="action-btns">
+                    <div>${badgesHtml}</div>
+                    <div class="action-btns" style="margin-top: auto;">
                         <button class="btn-sub" onclick="window.editWord('${w.id}')">編集</button>
                         <button class="btn-danger" onclick="window.deleteWord('${w.id}')">削除</button>
                     </div>
@@ -596,6 +711,7 @@
         document.getElementById('sourceInput').value = w.source || '';
         
         window.toggleForm(true);
+        window.renderChips(); // 編集時にも現在の作品名を反映させてチップに色をつける
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
