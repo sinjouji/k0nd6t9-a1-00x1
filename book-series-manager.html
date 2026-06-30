@@ -280,6 +280,8 @@ textarea{resize:vertical;min-height:72px;}
 .conf-medium .cand-conf{background:#f0d98a;color:#6b4c00;}
 .conf-low .cand-conf{background:#f5bcb4;color:#7a1a10;}
 .cand-dup-badge{font-size:10px;background:var(--bg2);color:var(--br3);padding:1px 6px;border-radius:10px;margin-left:4px;}
+.cand-check-badge{font-size:10px;background:#fde8e8;color:var(--red);padding:1px 6px;border-radius:10px;margin-left:4px;font-weight:700;}
+.cand-source{font-size:10px;color:var(--br4);margin-top:2px;word-break:break-all;}
 .bulk-empty{text-align:center;padding:32px 0;color:var(--br3);font-size:14px;}
 .bulk-foot{margin-top:14px;display:flex;align-items:center;gap:10px;justify-content:flex-end;flex-wrap:wrap;}
 .bulk-added-count{font-size:13px;color:var(--br3);flex:1;}
@@ -627,8 +629,20 @@ const aiPanelHTML = g.id !== '__default' ? `
     <div class="ai-field"><label>除外するもの</label>
       <textarea id="aip_excludeRules_${g.id}" placeholder="例：漫画版・スピンオフ">${esc(gai.excludeRules||'')}</textarea>
     </div>
-    <div class="ai-field"><label>タイトル整形指示</label>
-      <textarea id="aip_titleRule_${g.id}" placeholder="例：titleから「星のカービィ 」を削除&#10;例：サブタイトルのみ抽出">${esc(gai.titleRule||'')}</textarea>
+    <div class="ai-field">
+      <label>タイトル整形（コード側で確実に適用）</label>
+      <div style="display:flex;gap:14px;margin:2px 0 6px;font-size:13px;">
+        <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
+          <input type="radio" name="aip_titleMode_${g.id}" value="remove" ${(gai.titleRuleMode||'remove')==='remove'?'checked':''}> 除去
+        </label>
+        <label style="display:flex;align-items:center;gap:4px;font-weight:400;">
+          <input type="radio" name="aip_titleMode_${g.id}" value="add" ${gai.titleRuleMode==='add'?'checked':''}> 追加
+        </label>
+      </div>
+      <input type="text" id="aip_titleWord_${g.id}" value="${esc(gai.titleRuleWord||'')}" placeholder="例：星のカービィ（単語のみ）">
+      <div style="font-size:11px;color:var(--br3);margin-top:3px;">
+        除去：タイトル先頭の「単語（＋半角スペース）」を取り除く／追加：「単語＋半角スペース」をタイトル先頭に付与
+      </div>
     </div>
     <div class="ai-field">
       <div class="ai-field-row">
@@ -933,17 +947,33 @@ function resetOutputFormat(gid){
 function _readAiPanelValues(gid){
   const rawUrls  = (document.getElementById('aip_sourceUrls_'  + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
   const rawRules = (document.getElementById('aip_extraRules_'  + gid)?.value || '').split('\n').map(u=>u.trim()).filter(Boolean);
+  const modeEl   = document.querySelector('input[name="aip_titleMode_' + gid + '"]:checked');
   return {
-    publisher:    document.getElementById('aip_publisher_'    + gid)?.value.trim() || '',
-    label:        document.getElementById('aip_label_'        + gid)?.value.trim() || '',
-    sourceUrls:   rawUrls,
-    includeRules: document.getElementById('aip_includeRules_' + gid)?.value.trim() || '',
-    excludeRules: document.getElementById('aip_excludeRules_' + gid)?.value.trim() || '',
-    titleRule:    document.getElementById('aip_titleRule_'    + gid)?.value.trim() || '',
-    fixedRules:   document.getElementById('aip_fixedRules_'   + gid)?.value || _DEFAULT_FIXED_RULES,
-    extraRules:   rawRules,
-    outputFormat: document.getElementById('aip_outputFormat_' + gid)?.value.trim() || _DEFAULT_OUTPUT_FORMAT,
+    publisher:     document.getElementById('aip_publisher_'    + gid)?.value.trim() || '',
+    label:         document.getElementById('aip_label_'        + gid)?.value.trim() || '',
+    sourceUrls:    rawUrls,
+    includeRules:  document.getElementById('aip_includeRules_' + gid)?.value.trim() || '',
+    excludeRules:  document.getElementById('aip_excludeRules_' + gid)?.value.trim() || '',
+    titleRuleMode: modeEl ? modeEl.value : 'remove',
+    titleRuleWord: document.getElementById('aip_titleWord_'    + gid)?.value.trim() || '',
+    fixedRules:    document.getElementById('aip_fixedRules_'   + gid)?.value || _DEFAULT_FIXED_RULES,
+    extraRules:    rawRules,
+    outputFormat:  document.getElementById('aip_outputFormat_' + gid)?.value.trim() || _DEFAULT_OUTPUT_FORMAT,
   };
+}
+
+// タイトル整形をコード側で確実に適用（AIの指示遵守に依存しない）
+function _applyTitleRule(title, ai){
+  if(!ai || !ai.titleRuleWord) return title;
+  const word = ai.titleRuleWord.trim();
+  if(!word) return title;
+  if(ai.titleRuleMode === 'add'){
+    if(title.startsWith(word)) return title;
+    return word + ' ' + title;
+  }
+  if(title.startsWith(word + ' ')) return title.slice(word.length + 1);
+  if(title.startsWith(word))       return title.slice(word.length);
+  return title;
 }
 
 function saveAiPanel(sid, gid){
@@ -1020,10 +1050,9 @@ function _buildPromptText(s, g){
   // ── 末尾：タイトル整形・最終チェックを再掲して強調（モデルは末尾の指示に従いやすい） ──
   lines.push('');
   lines.push('【最終チェック（必ず守ること）】');
-  if(ai.titleRule){
-    lines.push('・タイトル整形：' + ai.titleRule);
-    lines.push('　→ 出力する全ての title が、この整形ルールを適用した後の形になっているか必ず確認すること');
-    lines.push('　→ 整形前の文字列（例：シリーズ名そのもの）が title に残っていた場合は不正解');
+  if(ai.titleRuleWord){
+    const modeLabel = ai.titleRuleMode === 'add' ? '先頭に付与' : '先頭から除去';
+    lines.push('・タイトル整形：「' + ai.titleRuleWord + '」を' + modeLabel + 'した形で出力すること（参考。最終的にはアプリ側で自動補正します）');
   }
   lines.push('・出力前に、各作品が本当に参照URLのページに実在するか再確認すること');
   lines.push('・1件でも確信が持てない作品があれば、その項目は出力しないこと（含めるより除外を優先）');
@@ -1198,7 +1227,7 @@ async function _geminiAutoGenerate(sid, gid){
           body: JSON.stringify({
             contents:[{parts:[{text:promptText}]}],
             tools:[{google_search:{}}],  // Web検索でURLの実内容を取得させる（ハルシネーション対策）
-            generationConfig:{temperature:0.1,maxOutputTokens:8192}
+            generationConfig:{temperature:0,maxOutputTokens:8192}
           }) }
       );
     } catch(networkErr){
@@ -1230,14 +1259,17 @@ async function _geminiAutoGenerate(sid, gid){
       console.log('[Gemini raw response]', raw);
       throw new Error('JSONの抽出に失敗しました。詳細はコンソール（console.log）を確認してください');
     }
+    // タイトル整形をコード側で確実に適用（AIの遵守に依存しない）
+    const g2 = db.series.find(x=>x.id===sid)?.groups.find(x=>x.id===gid);
+    const fixedJson = json.map(c => ({...c, title: _applyTitleRule(c.title, g2?.ai)}));
     _incrementUsage();
     _renderGeminiSettings();
     openBulkCandidateModal(sid, null, gid);
     setTimeout(()=>{
       const ta = document.getElementById('bulkJsonInput');
-      if(ta){ ta.value = JSON.stringify(json, null, 2); ta.classList.remove('error'); _onBulkJsonInput(ta); }
+      if(ta){ ta.value = JSON.stringify(fixedJson, null, 2); ta.classList.remove('error'); _onBulkJsonInput(ta); }
     }, 80);
-    showToast('✅ Geminiから ' + json.length + '件 取得しました');
+    showToast('✅ Geminiから ' + fixedJson.length + '件 取得しました');
   } catch(e){
     _showGeminiError(gid, e.message);
   } finally{
@@ -1945,6 +1977,7 @@ function _renderBulkList(existingTitles){
     const dup = existingTitles.has(c.title.trim());
     const checked = bulkChecked.has(i);
     const conf = c.confidence || 'medium';
+    const needsCheck = conf === 'low' || !c.sourceUrl;
     const metaParts = [
       c.publisher ? esc(c.publisher) : '',
       c.label ? esc(c.label) : '',
@@ -1955,9 +1988,10 @@ function _renderBulkList(existingTitles){
       + '<div class="cand-cb' + (checked ? ' checked' : '') + '" id="candCb_' + i + '">' + (checked ? '✓' : '') + '</div>'
       + '<div class="cand-body">'
       + (c.displayNum ? '<div class="cand-num">' + esc(c.displayNum) + '</div>' : '')
-      + '<div class="cand-title">' + esc(c.title) + (dup ? '<span class="cand-dup-badge">登録済み</span>' : '') + '</div>'
+      + '<div class="cand-title">' + esc(c.title) + (dup ? '<span class="cand-dup-badge">登録済み</span>' : '') + (needsCheck ? '<span class="cand-check-badge">⚠️要確認</span>' : '') + '</div>'
       + (meta ? '<div class="cand-meta">' + meta + '</div>' : '')
       + (c.reason ? '<div class="cand-reason">🔍 ' + esc(c.reason) + '</div>' : '')
+      + (c.sourceUrl ? '<div class="cand-source">🔗 ' + esc(c.sourceUrl) + '</div>' : '')
       + '</div>'
       + '<span class="cand-conf">' + esc(confLabel[conf] || conf) + '</span>'
       + '</div>';
