@@ -33,7 +33,6 @@
             margin-bottom: 20px;
         }
         
-        /* 検索とトグルボタンの並び */
         .controls-row {
             display: flex;
             gap: 10px;
@@ -52,9 +51,11 @@
             color: white;
             padding: 0 15px;
             font-size: 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
         }
 
-        /* アコーディオン（トグル）収納エリア */
         .form-section {
             background: var(--card-bg);
             padding: 0 20px;
@@ -68,7 +69,7 @@
         }
         .form-section.open {
             padding: 20px;
-            max-height: 500px; /* フォームが十分収まる高さ */
+            max-height: 600px;
             margin-bottom: 20px;
             opacity: 1;
         }
@@ -110,7 +111,6 @@
             background-color: var(--accent);
             color: white;
         }
-        .btn-accent:hover { background-color: #3b6347; }
         .btn-sub {
             background-color: #e2e8f0;
             color: var(--text-main);
@@ -132,7 +132,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.02);
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center; /* 👈 ボタンびよーん防止に修正しました！ */
         }
         .word-info h3 {
             margin: 0 0 5px 0;
@@ -153,6 +153,8 @@
             flex-direction: column;
             align-items: flex-end;
             gap: 8px;
+            flex-shrink: 0; /* ボタン側が潰れないように保護 */
+            margin-left: 15px;
         }
         .source-badge {
             background-color: var(--accent-light);
@@ -176,6 +178,8 @@
             margin-top: 30px;
             padding: 10px;
             font-size: 12px;
+            width: 100%;
+            box-sizing: border-box;
         }
         .file-input-label {
             padding: 10px 15px;
@@ -204,8 +208,8 @@
     <h1>📚 My英単語帳</h1>
     
     <div class="controls-row">
-        <input type="text" id="searchBar" class="search-bar" placeholder="単語や作品名で検索..." oninput="renderWords()">
-        <button class="btn-toggle" id="toggleFormBtn" onclick="toggleForm()" title="登録フォームを開閉">＋</button>
+        <input type="text" id="searchBar" class="search-bar" placeholder="単語や作品名で検索..." oninput="window.renderWords()">
+        <button class="btn-toggle" id="toggleFormBtn" onclick="window.toggleForm()">＋</button>
     </div>
 
     <div id="formSection" class="form-section">
@@ -214,7 +218,7 @@
             <label>英単語</label>
             <div class="input-row">
                 <input type="text" id="wordInput" placeholder="example">
-                <button type="button" class="btn-sub" id="autoBtn" onclick="fetchWordAndTranslate()">自動入力</button>
+                <button type="button" class="btn-sub" id="autoBtn" onclick="window.fetchWordAndTranslate()">自動入力</button>
             </div>
         </div>
         <div class="form-group">
@@ -230,18 +234,18 @@
             <input type="text" id="sourceInput" placeholder="映画名、本など">
         </div>
         <div style="display: flex; gap: 10px;">
-            <button class="btn-accent" style="flex: 1;" onclick="saveWord()">保存する</button>
-            <button class="btn-sub" onclick="clearForm(); toggleForm();">キャンセル</button>
+            <button class="btn-accent" style="flex: 1;" onclick="window.saveWord()">保存する</button>
+            <button class="btn-sub" onclick="window.clearForm(); window.toggleForm();">キャンセル</button>
         </div>
     </div>
 
     <ul id="wordList" class="word-list"></ul>
 
     <div class="backup-zone">
-        <button class="btn-sub" onclick="exportJSON()">📥 JSON書き出し</button>
+        <button class="btn-sub" onclick="window.exportJSON()">📥 JSON書き出し</button>
         <label class="file-input-label">
             📤 JSON読み込み
-            <input type="file" id="fileInput" accept=".json" onchange="importJSON(this)">
+            <input type="file" id="fileInput" accept=".json" onchange="window.importJSON(this)">
         </label>
     </div>
 </div>
@@ -249,10 +253,9 @@
 <div id="toast" class="toast"></div>
 
 <script>
-    // 💡 初期データのバグ修正：ローカルストレージが空の時だけ初期データを「保存された状態」でセットする
     const defaultWords = [
         { id: "default-apple", word: "apple", meaning: "リンゴ：赤または緑の皮を持つ丸い果物。", example: "I ate a fresh apple.", source: "日常会話" },
-        { id: "default-serendipity", word: "serendipity", meaning: "思いがけない幸運：探していなかった価値あるものを偶然見つけること。", example: "We found the charming little restaurant by pure serendipity.", source: "映画A" }
+        { id: "default-serendipity", word: "serendipity", meaning: "思いがけない幸運：探してい難かった価値あるものを偶然見つけること。", example: "We found the charming little restaurant by pure serendipity.", source: "映画A" }
     ];
 
     if (!localStorage.getItem('vocab_words')) {
@@ -261,8 +264,7 @@
 
     let words = JSON.parse(localStorage.getItem('vocab_words'));
 
-    // フォームの開閉トグル
-    function toggleForm(forceOpen = false) {
+    window.toggleForm = function(forceOpen = false) {
         const form = document.getElementById('formSection');
         const btn = document.getElementById('toggleFormBtn');
         
@@ -275,10 +277,9 @@
             btn.innerText = "✕";
             btn.style.backgroundColor = "#6b7d70";
         }
-    }
+    };
 
-    // 🌐 辞書データ取得 ＆ 日本語自動翻訳
-    async function fetchWordAndTranslate() {
+    window.fetchWordAndTranslate = async function() {
         const word = document.getElementById('wordInput').value.trim();
         if (!word) return;
 
@@ -301,42 +302,41 @@
 
             document.getElementById('meaningInput').value = translatedJapanese;
             document.getElementById('exampleInput').value = example;
-            showToast("✨ 日本語訳を自動入力しました！");
+            window.showToast("✨ 日本語訳を自動入力しました！");
 
         } catch (e) {
-            showToast("⚠️ データが見つからないか、翻訳に失敗しました");
+            window.showToast("⚠️ データが見つからないか、翻訳に失敗しました");
         } finally {
             autoBtn.innerText = "自動入力";
             autoBtn.disabled = false;
         }
-    }
+    };
 
-    // データ保存
-    function saveWord() {
+    window.saveWord = function() {
         const id = document.getElementById('editId').value;
         const word = document.getElementById('wordInput').value.trim();
         const meaning = document.getElementById('meaningInput').value.trim();
         const example = document.getElementById('exampleInput').value.trim();
         const source = document.getElementById('sourceInput').value.trim();
 
-        if (!word) { showToast("⚠️ 単語を入力してください"); return; }
+        if (!word) { window.showToast("⚠️ 単語を入力してください"); return; }
 
         if (id) {
             const index = words.findIndex(w => w.id === id);
             if (index !== -1) words[index] = { id, word, meaning, example, source };
         } else {
-            words.push({ id: crypto.randomUUID(), word, meaning, example, source });
+            const localId = 'word_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            words.push({ id: localId, word, meaning, example, source });
         }
 
         localStorage.setItem('vocab_words', JSON.stringify(words));
-        clearForm();
-        toggleForm(); // 保存したら自動で閉じる
-        renderWords();
-        showToast("💾 保存しました");
-    }
+        window.clearForm();
+        window.toggleForm();
+        window.renderWords();
+        window.showToast("💾 保存しました");
+    };
 
-    // 表示処理
-    function renderWords() {
+    window.renderWords = function() {
         const query = document.getElementById('searchBar').value.toLowerCase();
         const listElement = document.getElementById('wordList');
         listElement.innerHTML = '';
@@ -359,17 +359,16 @@
                 <div class="word-meta">
                     ${w.source ? `<span class="source-badge">${w.source}</span>` : ''}
                     <div class="action-btns">
-                        <button class="btn-sub" onclick="editWord('${w.id}')">編集</button>
-                        <button class="btn-danger" onclick="deleteWord('${w.id}')">削除</button>
+                        <button class="btn-sub" onclick="window.editWord('${w.id}')">編集</button>
+                        <button class="btn-danger" onclick="window.deleteWord('${w.id}')">削除</button>
                     </div>
                 </div>
             `;
             listElement.appendChild(li);
         });
-    }
+    };
 
-    // 編集モード
-    function editWord(id) {
+    window.editWord = function(id) {
         const w = words.find(w => w.id === id);
         if (!w) return;
         document.getElementById('editId').value = w.id;
@@ -378,29 +377,29 @@
         document.getElementById('exampleInput').value = w.example || '';
         document.getElementById('sourceInput').value = w.source || '';
         
-        toggleForm(true); // フォームを強制的に開く
+        window.toggleForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    </div>
+    };
 
-    function deleteWord(id) {
+    // 💡 修正箇所：deleteWordの頭に「window.」を付けて公式登録しました！
+    window.deleteWord = function(id) {
         if(confirm("本当に削除しますか？")) {
             words = words.filter(w => w.id !== id);
             localStorage.setItem('vocab_words', JSON.stringify(words));
-            renderWords();
-            showToast("🗑️ 削除しました");
+            window.renderWords();
+            window.showToast("🗑️ 削除しました");
         }
-    }
+    };
 
-    function clearForm() {
+    window.clearForm = function() {
         document.getElementById('editId').value = '';
         document.getElementById('wordInput').value = '';
         document.getElementById('meaningInput').value = '';
         document.getElementById('exampleInput').value = '';
         document.getElementById('sourceInput').value = '';
-    }
+    };
 
-    // バックアップ：書き出し
-    function exportJSON() {
+    window.exportJSON = function() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(words, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
@@ -408,10 +407,9 @@
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
-    }
+    };
 
-    // バックアップ：読み込み
-    function importJSON(input) {
+    window.importJSON = function(input) {
         const file = input.files[0];
         if (!file) return;
         const reader = new FileReader();
@@ -421,25 +419,24 @@
                 if (Array.isArray(imported)) {
                     words = imported;
                     localStorage.setItem('vocab_words', JSON.stringify(words));
-                    renderWords();
-                    showToast(`📥 ${words.length}件を取り込みました！`);
+                    window.renderWords();
+                    window.showToast(`📥 ${words.length}件を取り込みました！`);
                 }
             } catch(err) {
-                showToast("⚠️ 正しいJSONファイルではありません");
+                window.showToast("⚠️ 正しいJSONファイルではありません");
             }
         };
         reader.readAsText(file);
-    }
+    };
 
-    function showToast(msg) {
+    window.showToast = function(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
         toast.style.display = 'block';
         setTimeout(() => { toast.style.display = 'none'; }, 2000);
-    }
+    };
 
-    // 初期表示
-    renderWords();
+    window.renderWords();
 </script>
 </body>
 </html>
