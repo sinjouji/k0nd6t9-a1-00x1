@@ -965,15 +965,27 @@ function _readAiPanelValues(gid){
 // タイトル整形をコード側で確実に適用（AIの指示遵守に依存しない）
 function _applyTitleRule(title, ai){
   if(!ai || !ai.titleRuleWord) return title;
-  const word = ai.titleRuleWord.trim();
-  if(!word) return title;
+  const word = (ai.titleRuleWord || '').trim();
+  if(!word || !title) return title;
+
   if(ai.titleRuleMode === 'add'){
-    if(title.startsWith(word)) return title;
+    // 既に単語で始まっていれば付与しない（全角/半角スペース両対応で判定）
+    const already = new RegExp('^' + _escapeRegExp(word) + '[\\s　]*').test(title);
+    if(already) return title;
     return word + ' ' + title;
   }
-  if(title.startsWith(word + ' ')) return title.slice(word.length + 1);
-  if(title.startsWith(word))       return title.slice(word.length);
+
+  // 除去：先頭の「単語＋（あれば区切り文字）」を取り除く
+  // 区切り文字：半角/全角スペース、コロン、中黒、ハイフン、波ダッシュ等
+  const pattern = new RegExp('^' + _escapeRegExp(word) + '[\\s　:：・\\-―ー~〜]*');
+  if(pattern.test(title)){
+    return title.replace(pattern, '').trim();
+  }
   return title;
+}
+
+function _escapeRegExp(s){
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function saveAiPanel(sid, gid){
