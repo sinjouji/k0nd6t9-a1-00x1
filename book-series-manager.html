@@ -633,12 +633,12 @@ const aiPanelHTML = g.id !== '__default' ? `
     </div>
     <div class="ai-field">
       <label>タイトル整形（コード側で確実に適用）</label>
-      <div style="display:flex;gap:16px;margin:2px 0 6px;font-size:13px;flex-wrap:nowrap;">
-        <label style="display:flex;align-items:center;gap:4px;font-weight:400;white-space:nowrap;flex-shrink:0;">
-          <input type="radio" name="aip_titleMode_${g.id}" value="remove" ${(gai.titleRuleMode||'remove')==='remove'?'checked':''} style="flex-shrink:0;"> 除去
+      <div style="display:flex;gap:20px;margin:2px 0 6px;font-size:13px;">
+        <label style="display:inline-flex;align-items:center;gap:4px;font-weight:400;white-space:nowrap;">
+          <input type="radio" name="aip_titleMode_${g.id}" value="remove" ${(gai.titleRuleMode||'remove')==='remove'?'checked':''}><span style="white-space:nowrap;">除去</span>
         </label>
-        <label style="display:flex;align-items:center;gap:4px;font-weight:400;white-space:nowrap;flex-shrink:0;">
-          <input type="radio" name="aip_titleMode_${g.id}" value="add" ${gai.titleRuleMode==='add'?'checked':''} style="flex-shrink:0;"> 追加
+        <label style="display:inline-flex;align-items:center;gap:4px;font-weight:400;white-space:nowrap;">
+          <input type="radio" name="aip_titleMode_${g.id}" value="add" ${gai.titleRuleMode==='add'?'checked':''}><span style="white-space:nowrap;">追加</span>
         </label>
       </div>
       <input type="text" id="aip_titleWord_${g.id}" value="${esc(gai.titleRuleWord||'')}" placeholder="例：星のカービィ（単語のみ）">
@@ -966,6 +966,19 @@ function _readAiPanelValues(gid){
 
 // タイトル整形をコード側で確実に適用（AIの指示遵守に依存しない）
 // カンマ・読点・中黒・スラッシュなど複数の区切り文字に対応して配列化
+// タイトル重複判定用の正規化キーを生成
+// ・記号/英字は全角→半角に統一（NFKC正規化）して表記ゆれを吸収
+// ・数字も全角→半角には統一するが、数値そのものが違えば別物として区別する
+//   （NFKCは "１"→"1" のような数字も変換するため、これはそのままでよい：
+//    「1巻」と「２巻」は同じ "1巻" になるが、「1巻」と「2巻」は別の "1巻"/"2巻" のまま）
+// ・連続する空白（全角/半角）は1つの半角スペースに統一し、前後の空白は除去
+function _normalizeTitle(title){
+  if(!title) return '';
+  let t = String(title).normalize('NFKC'); // 全角英数記号→半角に統一（数字の値自体は変わらない）
+  t = t.replace(/[\s　]+/g, ' ').trim();    // 空白の表記ゆれを統一
+  return t;
+}
+
 function _splitRuleText(text){
   if(!text) return [];
   return text
@@ -1820,12 +1833,12 @@ function openBulkCandidateModal(sid, candidates, defaultGid){
   });
 
   const existingTitles = new Set();
-  (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
-  s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
+  (s.books || []).forEach(b => existingTitles.add(_normalizeTitle(b.title)));
+  s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(_normalizeTitle(b.title))));
 
   bulkChecked = new Set();
   bulkCandidates.forEach((c, i) => {
-    const dup = existingTitles.has(c.title.trim());
+    const dup = existingTitles.has(_normalizeTitle(c.title));
     if(!dup && (c.confidence === 'high' || c.confidence === 'medium')){
       bulkChecked.add(i);
     }
@@ -1953,12 +1966,12 @@ function _onBulkJsonInput(ta){
   );
   const existingTitles = new Set();
   if(s){
-    (s.books||[]).forEach(b => existingTitles.add(b.title.trim()));
-    s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(b.title.trim())));
+    (s.books||[]).forEach(b => existingTitles.add(_normalizeTitle(b.title)));
+    s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(_normalizeTitle(b.title))));
   }
   bulkChecked = new Set();
   bulkCandidates.forEach((c,i) => {
-    if(!existingTitles.has(c.title.trim()) && (c.confidence==='high'||c.confidence==='medium'))
+    if(!existingTitles.has(_normalizeTitle(c.title)) && (c.confidence==='high'||c.confidence==='medium'))
       bulkChecked.add(i);
   });
   _renderBulkList(existingTitles);
@@ -1977,11 +1990,11 @@ function _loadSampleCandidates(){
   if(errEl) errEl.textContent = '';
   bulkCandidates = sample.slice().sort((a,b) => (a.publishedDate||'').localeCompare(b.publishedDate||''));
   const existingTitles = new Set();
-  (s.books||[]).forEach(b => existingTitles.add(b.title.trim()));
-  s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(b.title.trim())));
+  (s.books||[]).forEach(b => existingTitles.add(_normalizeTitle(b.title)));
+  s.groups.forEach(g => (g.books||[]).forEach(b => existingTitles.add(_normalizeTitle(b.title))));
   bulkChecked = new Set();
   bulkCandidates.forEach((c,i) => {
-    if(!existingTitles.has(c.title.trim()) && (c.confidence==='high'||c.confidence==='medium'))
+    if(!existingTitles.has(_normalizeTitle(c.title)) && (c.confidence==='high'||c.confidence==='medium'))
       bulkChecked.add(i);
   });
   _renderBulkList(existingTitles);
@@ -2003,8 +2016,8 @@ function _renderBulkList(existingTitles){
     const s = db.series.find(x => x.id === currentSeriesId);
     existingTitles = new Set();
     if(s){
-      (s.books || []).forEach(b => existingTitles.add(b.title.trim()));
-      s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(b.title.trim())));
+      (s.books || []).forEach(b => existingTitles.add(_normalizeTitle(b.title)));
+      s.groups.forEach(g => (g.books || []).forEach(b => existingTitles.add(_normalizeTitle(b.title))));
     }
   }
   const el = document.getElementById('bulkCandList');
@@ -2018,7 +2031,7 @@ function _renderBulkList(existingTitles){
 
   const confLabel = {high:'精度：高', medium:'精度：中', low:'精度：低'};
   el.innerHTML = bulkCandidates.map((c, i) => {
-    const dup = existingTitles.has(c.title.trim());
+    const dup = existingTitles.has(_normalizeTitle(c.title));
     const checked = bulkChecked.has(i);
     const conf = c.confidence || 'medium';
     const needsCheck = conf === 'low' || !c.sourceUrl;
@@ -2090,14 +2103,14 @@ function _executeBulkAdd(sid){
 
   // シリーズ全体の全本をタイトル→bookオブジェクトのMapで引けるようにする
   const allBooksMap = new Map();
-  (s.books || []).forEach(b => allBooksMap.set(b.title.trim(), b));
-  s.groups.forEach(g => (g.books || []).forEach(b => allBooksMap.set(b.title.trim(), b)));
+  (s.books || []).forEach(b => allBooksMap.set(_normalizeTitle(b.title), b));
+  s.groups.forEach(g => (g.books || []).forEach(b => allBooksMap.set(_normalizeTitle(b.title), b)));
 
   const toProcess = [...bulkChecked].sort((a,b) => a - b).map(i => bulkCandidates[i]);
   let addedCount = 0, patchedCount = 0;
 
   toProcess.forEach(c => {
-    const existing = allBooksMap.get(c.title.trim());
+    const existing = allBooksMap.get(_normalizeTitle(c.title));
     if(existing){
       // タイトル一致 → 空欄のみ補完（上書きしない）
       let patched = false;
