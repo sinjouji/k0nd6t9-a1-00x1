@@ -136,6 +136,40 @@
             background-color: #fee2e2;
             color: #ef4444;
         }
+
+        /* 🧩 クイズモードのスタイル */
+        .quiz-section {
+            background: #edf2f7;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 30px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .quiz-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .quiz-word {
+            font-size: 22px;
+            font-weight: bold;
+            margin: 0;
+        }
+        .quiz-meaning {
+            font-size: 16px;
+            color: var(--accent);
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
         .word-list {
             list-style: none;
             padding: 0;
@@ -227,7 +261,6 @@
         <button class="btn-sub" onclick="window.toggleSettings()">⚙️ 設定</button>
     </div>
 
-    <!-- ⚙️ 設定パネル（ローカル保存） -->
     <div id="settingsPanel" class="settings-panel">
         <h3>⚙️ 翻訳・AI設定</h3>
         <div class="form-group">
@@ -283,6 +316,22 @@
 
     <ul id="wordList" class="word-list"></ul>
 
+    <div class="quiz-section">
+        <h3>🧩 単語テスト（クイズモード）</h3>
+        <button class="btn-accent" onclick="window.startQuiz()">クイズを始める</button>
+        
+        <div id="quizContent" style="display: none;">
+            <div class="quiz-card">
+                <p id="quizWord" class="quiz-word"></p>
+                <p id="quizMeaning" class="quiz-meaning" style="display: none;"></p>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn-sub" onclick="window.showQuizAnswer()">答えを見る</button>
+                <button class="btn-accent" onclick="window.nextQuiz()">次の単語</button>
+            </div>
+        </div>
+    </div>
+
     <div class="backup-zone">
         <button class="btn-sub" onclick="window.exportJSON()">📥 JSON書き出し</button>
         <label class="file-input-label">
@@ -295,7 +344,6 @@
 <div id="toast" class="toast"></div>
 
 <script>
-    // デフォルトデータ
     const defaultWords = [
         { id: "default-apple", word: "apple", meaning: "リンゴ：一般的な丸い果物。", example: "I ate a fresh apple.", source: "日常会話" },
         { id: "default-serendipity", word: "serendipity", meaning: "思いがけない幸運：偶然素晴らしいものを見つけること。", example: "We found the charming little restaurant by pure serendipity.", source: "映画A" }
@@ -306,7 +354,6 @@
     }
     let words = JSON.parse(localStorage.getItem('vocab_words'));
 
-    // ⚙️ 設定の初期読み込み
     const getTodayKey = () => "api_count_" + new Date().toISOString().split('T')[0];
     
     let settings = {
@@ -316,7 +363,6 @@
         count: parseInt(localStorage.getItem(getTodayKey())) || 0
     };
 
-    // UIへ設定を反映
     document.getElementById('translateMode').value = settings.mode;
     document.getElementById('geminiApiKey').value = settings.apiKey;
     document.getElementById('apiLimit').value = settings.limit;
@@ -356,7 +402,6 @@
         }
     };
 
-    // 🧠 翻訳＆自動入力（Google / Gemini 切り替え対応）
     window.fetchWordAndTranslate = async function() {
         const word = document.getElementById('wordInput').value.trim();
         if (!word) return;
@@ -366,7 +411,6 @@
         autoBtn.disabled = true;
 
         if (settings.mode === 'gemini') {
-            // === 🤖 Gemini API モード ===
             if (!settings.apiKey) {
                 window.showToast("⚠️ ⚙️設定からGeminiのAPIキーを入力してください");
                 autoBtn.innerText = "自動入力";
@@ -382,9 +426,7 @@
             }
 
             try {
-                // 最新のGemini 2.5 Flashモデルを使用
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${settings.apiKey}`;
-                
                 const prompt = `以下の英単語について、単語帳用のデータをJSON形式のみで返してください。余計な説明文や\`\`\`jsonのようなマークアップは一切含めず、以下のJSONフォーマットを完全に守ってください。
 {
   "meaning": "ここに日本語での短く分かりやすい意味（学名などは含めず、一般的な訳）",
@@ -401,15 +443,12 @@
                 if (!response.ok) throw new Error("APIエラー");
                 const resData = await response.json();
                 const aiResponseText = resData.candidates[0].content.parts[0].text.trim();
-                
-                // AIの返答からJSONをパース
                 const cleanJsonText = aiResponseText.replace(/```json/g, "").replace(/```/g, "").trim();
                 const result = JSON.parse(cleanJsonText);
 
                 document.getElementById('meaningInput').value = result.meaning || "意味を取得できませんでした";
                 document.getElementById('exampleInput').value = result.example || "";
                 
-                // カウンターの加算と保存
                 settings.count += 1;
                 localStorage.setItem(getTodayKey(), settings.count);
                 window.updateCounterLabel();
@@ -422,9 +461,7 @@
                 autoBtn.innerText = "自動入力";
                 autoBtn.disabled = false;
             }
-
         } else {
-            // === 🌐 従来の手動Google翻訳モード ===
             try {
                 const dictRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
                 if (!dictRes.ok) throw new Error();
@@ -508,6 +545,32 @@
             `;
             listElement.appendChild(li);
         });
+    };
+
+    // 🧩 クイズ用の処理
+    let currentQuizWord = null;
+    window.startQuiz = function() {
+        if (words.length === 0) {
+            window.showToast("⚠️ まずは単語を登録してください");
+            return;
+        }
+        document.getElementById('quizContent').style.display = 'block';
+        window.nextQuiz();
+    };
+
+    window.nextQuiz = function() {
+        if (words.length === 0) return;
+        const randomIndex = Math.floor(Math.random() * words.length);
+        currentQuizWord = words[randomIndex];
+        
+        document.getElementById('quizWord').innerText = currentQuizWord.word;
+        document.getElementById('quizMeaning').innerText = currentQuizWord.meaning;
+        document.getElementById('quizMeaning').style.display = 'none';
+    };
+
+    window.showQuizAnswer = function() {
+        if (!currentQuizWord) return;
+        document.getElementById('quizMeaning').style.display = 'block';
     };
 
     window.editWord = function(id) {
