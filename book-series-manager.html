@@ -1263,7 +1263,7 @@ const LS_USAGE_DATE   = 'geminiUsageDate';
 const LS_USAGE_COUNT  = 'geminiUsageCount';
 const LS_USAGE_LIMIT  = 'geminiUsageLimit';
 const GEMINI_DEFAULT_LIMIT = 10;
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_WARN_RATIO = 0.8;
 
 function _geminiGetMode(){ return localStorage.getItem(LS_GEMINI_MODE) || 'manual'; }
@@ -1407,17 +1407,21 @@ async function _geminiAutoGenerate(sid, gid){
       throw new Error(`APIエラー ${res.status}：` + (msg || '不明なエラー'));
     }
     const data = await res.json();
-    const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const parts = data?.candidates?.[0]?.content?.parts;
+    const raw   = parts?.[0]?.text || '';
     const finishReason = data?.candidates?.[0]?.finishReason || '';
     if(!raw){
       console.log('[Gemini empty response - full data]', JSON.stringify(data, null, 2));
       const blockReason   = data?.promptFeedback?.blockReason || '';
       const hasCandidates = Array.isArray(data?.candidates) && data.candidates.length > 0;
+      const hasParts      = Array.isArray(parts) && parts.length > 0;
       let detail = '';
       if(blockReason){
         detail = '（セーフティブロック：' + blockReason + '）';
       } else if(finishReason && finishReason !== 'STOP'){
         detail = '（終了理由：' + finishReason + '）';
+      } else if(hasCandidates && !hasParts){
+        detail = '（URLの取得は成功しましたが、テキスト生成が行われませんでした。モデルがurl_contextに対応していない可能性があります）';
       } else if(!hasCandidates){
         detail = '（候補が0件でした。検索結果が見つからなかった可能性があります）';
       } else {
