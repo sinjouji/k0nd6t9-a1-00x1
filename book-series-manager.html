@@ -1389,7 +1389,7 @@ async function _geminiAutoGenerate(sid, gid){
         { method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({
             contents:[{parts:[{text:promptText}]}],
-            tools:[{google_search:{}}],  // Web検索でURLの実内容を取得させる（ハルシネーション対策）
+            tools:[{url_context:{}},{google_search:{}}],  // url_context=URLの中身を直接読む / google_search=補助的なWeb検索
             generationConfig:{temperature:0,maxOutputTokens:8192}
           }) }
       );
