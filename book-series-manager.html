@@ -1168,42 +1168,32 @@ function _buildPromptText(s, g){
   else{ lines.push('（URLを設定してください）'); }
   lines.push('');
 
-  // ── ステップ強制（Gemini推奨の核心） ──
-  lines.push('# 実行手順（重要：必ずこの順番で思考してから出力してください）');
+  // ── ステップ強制（思考は内部のみ・出力はJSONのみ） ──
+  lines.push('# 実行手順');
+  lines.push('以下のステップを内部で実行してください。思考過程はテキストで出力しないこと。');
   lines.push('');
   if(urls.length > 1){
-    lines.push('Step 1. 上記URLを1つずつ順番にWeb検索で取得し、ページに存在する書籍タイトルと発売日を、');
-    lines.push('        1文字も変えず（全角・半角・スペース・記号を含め完全一致で）すべて内部メモリに書き出す。');
-    lines.push('        → URLが複数ある場合は、1件ずつ取得・記録を繰り返してからStep 2へ進むこと。');
+    lines.push('1. 上記URLを1つずつWeb検索で取得し、書籍タイトルと発売日を完全一致で内部メモリに記録する。URLが複数ある場合は1件ずつ繰り返すこと。');
   } else {
-    lines.push('Step 1. 上記URLをWeb検索で取得し、ページに存在する書籍タイトルと発売日を、');
-    lines.push('        1文字も変えず（全角・半角・スペース・記号を含め完全一致で）すべて内部メモリに書き出す。');
+    lines.push('1. 上記URLをWeb検索で取得し、書籍タイトルと発売日を完全一致で内部メモリに記録する。');
   }
-  lines.push('');
   if(excludeItems.length > 0){
-    lines.push('Step 2. 書き出したリストから「除外するもの」に該当する作品を完全に削除する。');
-    lines.push('        （ひらがな・カタカナ・漢字など表記ゆれも含めて除外すること）');
+    lines.push('2. 「除外するもの」に該当する作品を削除する（表記ゆれも含めて除外）。');
   } else {
-    lines.push('Step 2. 書き出したリストから、前提条件の「除外するもの」に該当する作品を削除する。');
+    lines.push('2. 「除外するもの」に該当する作品を削除する。');
   }
-  lines.push('');
-  lines.push('Step 3. 残った作品を発売日順（古い順）に並び替え、1から連番（displayNum）を振る。');
-  lines.push('');
+  lines.push('3. 発売日順（古い順）に並び替え、1から連番（displayNum）を振る。');
   if(titleWord){
-    lines.push('Step 4. 各タイトルの先頭にある「' + titleWord + '」を' + titleMode + '。');
-    lines.push('        それ以外の文字は1文字も変更してはならない。');
-    lines.push('        ※ このStep 4はアプリ側でも自動補正されるため、確実でない場合は整形前のままでよい。');
-    lines.push('');
-    lines.push('Step 5. 重複している作品があれば1件に統合する。');
-    lines.push('');
-    lines.push('Step 6. 出力しようとしているタイトルが、元ページのテキストと（Step 4の整形を除いて）');
+    lines.push('4. 各タイトルから「' + titleWord + '」を' + titleMode + '（アプリ側でも自動補正するため不確実なら整形前のままでよい）。');
+    lines.push('5. 重複を統合する。');
+    lines.push('6. 元ページに実在するか最終確認。不確実な作品は除外を優先する。');
   } else {
-    lines.push('Step 4. 重複している作品があれば1件に統合する。');
-    lines.push('');
-    lines.push('Step 5. 出力しようとしているタイトルが、元ページのテキストと');
+    lines.push('4. 重複を統合する。');
+    lines.push('5. 元ページに実在するか最終確認。不確実な作品は除外を優先する。');
   }
-  lines.push('        完全一致しているか再確認する。');
-  lines.push('        少しでも不確実な作品は「除外」を優先すること。');
+  lines.push('');
+  lines.push('上記の思考が完了したら、結果をそのまま下記の出力形式でのみ出力すること。');
+  lines.push('ステップの説明・確認文・前置き・コードブロックは一切出力しないこと。');
   lines.push('');
 
   // ── 出力形式 ──
