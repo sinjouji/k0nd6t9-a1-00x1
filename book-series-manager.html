@@ -1390,7 +1390,7 @@ async function _geminiAutoGenerate(sid, gid){
           body: JSON.stringify({
             contents:[{parts:[{text:promptText}]}],
             tools:[{url_context:{}},{google_search:{}}],  // url_context=URLの中身を直接読む / google_search=補助的なWeb検索
-            generationConfig:{temperature:0,maxOutputTokens:8192}
+            generationConfig:{temperature:0,maxOutputTokens:65536}
           }) }
       );
     } catch(networkErr){
