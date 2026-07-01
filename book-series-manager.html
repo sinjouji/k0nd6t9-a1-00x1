@@ -1737,6 +1737,20 @@ function deleteBook(sid,gid,bid){
 
 
 // order -> 表示番号 -> タイトルでソート
+// publishedDate文字列を数値に変換してorderとして使う
+// 対応形式：'2013-08-12' / '2013年8月12日' / '2013年08月12日' / '2013/08/12'
+function _dateToOrder(dateStr){
+  if(!dateStr) return 0;
+  const s = String(dateStr).normalize('NFKC');
+  // YYYY-MM-DD
+  let m = s.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(m) return parseInt(m[1]) * 10000 + parseInt(m[2]) * 100 + parseInt(m[3]);
+  // YYYY年M月D日
+  m = s.match(/(\d{4})年(\d{1,2})月(\d{1,2})日?/);
+  if(m) return parseInt(m[1]) * 10000 + parseInt(m[2]) * 100 + parseInt(m[3]);
+  return 0;
+}
+
 function getSortText(b){
   return String(b.displayNum || b.title || '');
 }
@@ -2271,6 +2285,11 @@ function _executeBulkAdd(sid){
       if(!existing.publisher    && c.publisher)    { existing.publisher    = c.publisher;    patched = true; }
       if(!existing.label        && c.label)        { existing.label        = c.label;        patched = true; }
       if(!existing.publishedDate && c.publishedDate){ existing.publishedDate = c.publishedDate; patched = true; }
+      // publishedDateが補完された or 既にあるのにorderが0なら orderも更新
+      if(!existing.order && existing.publishedDate){
+        existing.order = _dateToOrder(existing.publishedDate);
+        patched = true;
+      }
       if(patched) patchedCount++;
     } else {
       // タイトル不一致 → 新規追加
@@ -2278,7 +2297,8 @@ function _executeBulkAdd(sid){
         id: genId(), title: c.title, displayNum: c.displayNum || '',
         publisher: c.publisher || '', label: c.label || '',
         publishedDate: c.publishedDate || '',
-        owned: false, memo: '', order: 0,
+        owned: false, memo: '',
+        order: _dateToOrder(c.publishedDate),  // 発売日をorderに変換して並び順を自動設定
       });
       addedCount++;
     }
