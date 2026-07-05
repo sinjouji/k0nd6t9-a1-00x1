@@ -92,6 +92,10 @@ section[hidden]{display:none;}
 .recipe-card h3{margin:0 26px 6px 0; font-size:1.02rem; color:var(--ink);}
 .recipe-card .meta{font-size:.7rem; color:var(--sub); margin-bottom:8px;}
 .chip-row{display:flex; flex-wrap:wrap; gap:5px;}
+.scroll-limited{
+  max-height:120px; overflow-y:auto; border:1px dashed var(--line); border-radius:10px;
+  padding:8px; background:var(--panel-2);
+}
 
 .tag-chip{
   display:inline-flex; align-items:center; gap:4px;
@@ -117,6 +121,7 @@ section[hidden]{display:none;}
   overflow-y:auto;
 }
 .overlay[hidden]{display:none;}
+#detailOverlay{ z-index:60; }
 .modal-box{
   background:var(--panel); border-radius:18px; width:100%; max-width:680px;
   padding:0; box-shadow:0 12px 40px rgba(0,0,0,.18); margin-bottom:24px;
@@ -313,7 +318,7 @@ section[hidden]{display:none;}
 
     <div class="field">
       <label>タグで絞り込み（タップで指定なし→AND→OR→NOTと切替）</label>
-      <div class="chip-row" id="searchTagChips"></div>
+      <div class="chip-row scroll-limited" id="searchTagChips"></div>
     </div>
 
     <div class="field">
@@ -984,7 +989,10 @@ function renderMenuGroups(){
     const chips = (g.recipeIds||[]).map(rid=>{
       const r = recipes.find(x=>x.id===rid);
       const title = r ? r.title : '(削除済みレシピ)';
-      return `<span class="tag-chip">${escapeHtml(title)} <span class="x" onclick="removeRecipeFromGroup(${gi},'${rid}')">×</span></span>`;
+      const titleHtml = r
+        ? `<span style="cursor:pointer;" onclick="openDetail('${rid}')">${escapeHtml(title)}</span>`
+        : `<span style="color:var(--sub);">${escapeHtml(title)}</span>`;
+      return `<span class="tag-chip">${titleHtml} <span class="x" onclick="event.stopPropagation(); removeRecipeFromGroup(${gi},'${rid}')">×</span></span>`;
     }).join('') || '<span style="color:var(--sub);font-size:.8rem;">まだレシピがありません</span>';
     return `
     <div class="ing-group" style="margin-bottom:12px;">
