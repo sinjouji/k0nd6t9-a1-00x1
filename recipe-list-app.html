@@ -178,6 +178,14 @@ section[hidden]{display:none;}
 .ing-group{
   border:1px solid var(--line); border-radius:12px; background:var(--panel-2); padding:10px 12px;
 }
+.ing-group-c0{ background:#EAF1E3; border-color:#D3E2C6; } /* 若草 */
+.ing-group-c1{ background:#F5E6E8; border-color:#E8C9CE; } /* 桜 */
+.ing-group-c2{ background:#E3EDF3; border-color:#C7DBE8; } /* 空色 */
+.ing-group-c3{ background:#FBF0DC; border-color:#EFDBAE; } /* 山吹 */
+.ing-group-c4{ background:#EDE6F3; border-color:#D9C9E8; } /* 藤 */
+.ing-group-c5{ background:#F3EDE3; border-color:#E2D3B8; } /* 生成り */
+.ing-group-c0 .ing-row input, .ing-group-c1 .ing-row input, .ing-group-c2 .ing-row input,
+.ing-group-c3 .ing-row input, .ing-group-c4 .ing-row input, .ing-group-c5 .ing-row input{ background:#fff; }
 .ing-group-head{display:flex; align-items:center; gap:6px; margin-bottom:8px;}
 .ing-group-head input{
   border:none; background:transparent; font-weight:600; font-size:.85rem; color:var(--primary-dark);
@@ -639,16 +647,17 @@ function openDetail(id){
   const r = recipes.find(x=>x.id===id); if(!r) return;
   document.getElementById('detailTitle').textContent = r.title;
   const groups = r.ingredientGroups||[];
-  const renderGroupHtml = (g) => `
-    <div style="margin-bottom:10px;">
+  const groupColorClass = (gi) => `ing-group-c${gi % 6}`;
+  const renderGroupHtml = (g, gi) => `
+    <div class="ing-group ${groupColorClass(gi)}" style="margin-bottom:10px;">
       ${g.group ? `<div style="font-weight:600;font-size:.85rem;color:var(--primary-dark);margin-bottom:4px;">${escapeHtml(g.group)}</div>` : ''}
       ${g.items.map(it=>`<div style="font-size:.88rem;padding:3px 0;border-bottom:1px dashed var(--line);">${escapeHtml(it.name)} <span style="color:var(--sub);">${escapeHtml(it.amount)}</span></div>`).join('')}
     </div>`;
   const [gCol1, gCol2] = balanceGroupsIntoColumns(groups);
   const groupsHtml = groups.length===0 ? '' : `
     <div class="ing-columns">
-      <div class="ing-col">${gCol1.map(i=>renderGroupHtml(groups[i])).join('')}</div>
-      ${gCol2.length ? `<div class="ing-col">${gCol2.map(i=>renderGroupHtml(groups[i])).join('')}</div>` : ''}
+      <div class="ing-col">${gCol1.map(i=>renderGroupHtml(groups[i], i)).join('')}</div>
+      ${gCol2.length ? `<div class="ing-col">${gCol2.map(i=>renderGroupHtml(groups[i], i)).join('')}</div>` : ''}
     </div>`;
   const stepsHtml = (r.steps||[]).map((s,i)=>`
     <div class="step-card"><div class="step-label">手順${i+1}</div><div class="step-lines">${escapeHtml(s)}</div></div>`).join('');
@@ -854,7 +863,7 @@ function renderIngredients(){
   const renderGroup = (gi) => {
     const g = curGroups[gi];
     return `
-    <div class="ing-group">
+    <div class="ing-group ing-group-c${gi % 6}">
       <div class="ing-group-head">
         <input type="text" placeholder="グループ名（空欄可）" value="${escapeHtml(g.group)}" oninput="updateGroupName(${gi}, this.value)">
         <button class="btn ghost" onclick="removeIngredientGroup(${gi})" style="margin-left:auto;">グループ削除</button>
