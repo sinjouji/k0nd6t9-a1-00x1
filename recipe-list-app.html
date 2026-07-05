@@ -274,6 +274,7 @@ section[hidden]{display:none;}
     <nav>
       <button class="tab-btn active" id="tabListBtn" onclick="switchTab('list')">レシピ</button>
       <button class="tab-btn" id="tabSearchBtn" onclick="switchTab('search')">検索</button>
+      <button class="tab-btn" id="tabMenuBtn" onclick="switchTab('menu')">献立</button>
       <button class="tab-btn" id="tabTagBtn" onclick="switchTab('tags')">タグ管理</button>
     </nav>
     <div style="display:flex; gap:6px;">
@@ -330,6 +331,14 @@ section[hidden]{display:none;}
     </div>
 
     <div class="recipe-grid" id="searchResultGrid"></div>
+  </section>
+
+  <section id="view-menu" hidden>
+    <div class="toolbar">
+      <div style="font-size:.8rem; color:var(--sub); flex:1;">献立リストは最大3件まで保存できます。</div>
+      <button class="btn" id="addMenuBtn" onclick="addMenuList()">＋ 献立リスト追加</button>
+    </div>
+    <div class="recipe-grid" id="menuGrid"></div>
   </section>
 
   <section id="view-tags" hidden>
@@ -413,11 +422,33 @@ section[hidden]{display:none;}
   </div>
 </div>
 
+<div class="overlay" id="menuOverlay" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>献立リスト</h2>
+      <button class="modal-close" onclick="closeMenuModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="field">
+        <label>リスト名</label>
+        <input type="text" id="menu-name" oninput="updateMenuName(this.value)">
+      </div>
+      <div id="menuGroupsWrap"></div>
+      <button class="btn secondary small" style="margin-top:6px;" onclick="addMenuGroup()">＋ グループ追加</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn danger" onclick="deleteMenuList()">リストを削除</button>
+      <button class="btn secondary" onclick="closeMenuModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ---------- storage ---------- */
-const LS_RECIPES='recipeApp_recipes', LS_TAGS='recipeApp_tags', LS_UPDATED='recipeApp_lastUpdated';
+const LS_RECIPES='recipeApp_recipes', LS_TAGS='recipeApp_tags', LS_UPDATED='recipeApp_lastUpdated', LS_MENUS='recipeApp_mealLists';
 let recipes = JSON.parse(localStorage.getItem(LS_RECIPES) || '[]');
 let tags = JSON.parse(localStorage.getItem(LS_TAGS) || '[]');
+let mealLists = JSON.parse(localStorage.getItem(LS_MENUS) || '[]');
 
 function nowJSTISO(){ return new Date().toISOString(); }
 function formatJST(iso){
@@ -435,11 +466,15 @@ function saveAll(){
   localStorage.setItem(LS_TAGS, JSON.stringify(tags));
   touchUpdated();
 }
+function saveMealLists(){
+  localStorage.setItem(LS_MENUS, JSON.stringify(mealLists));
+  touchUpdated();
+}
 function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(16).slice(2)); }
 
 /* ---------- export / import ---------- */
 async function exportData(){
-  const data = { recipes, tags, exportedAt: nowJSTISO() };
+  const data = { recipes, tags, mealLists, exportedAt: nowJSTISO() };
   const json = JSON.stringify(data, null, 2);
   const stamp = formatJST(nowJSTISO()).replace(/[/: ]/g,'-');
   const filename = `recipe-list-${stamp}.json`;
@@ -492,7 +527,16 @@ function importData(file){
       if(idx>=0){ recipes[idx]=r; updated++; } else { recipes.push(r); added++; }
     });
     saveAll();
+    if(Array.isArray(data.mealLists)){
+      data.mealLists.forEach(m=>{
+        if(!m || !m.id) return;
+        const idx = mealLists.findIndex(x=>x.id===m.id);
+        if(idx>=0) mealLists[idx]=m; else mealLists.push(m);
+      });
+      saveMealLists();
+    }
     renderList(); renderTagManage();
+    if(!document.getElementById('view-menu').hidden) renderMenuList();
     alert(`読み込み完了：追加 ${added}件 / 上書き ${updated}件`);
   };
   reader.readAsText(file);
@@ -502,12 +546,15 @@ function importData(file){
 function switchTab(tab){
   document.getElementById('view-list').hidden = tab!=='list';
   document.getElementById('view-search').hidden = tab!=='search';
+  document.getElementById('view-menu').hidden = tab!=='menu';
   document.getElementById('view-tags').hidden = tab!=='tags';
   document.getElementById('tabListBtn').classList.toggle('active', tab==='list');
   document.getElementById('tabSearchBtn').classList.toggle('active', tab==='search');
+  document.getElementById('tabMenuBtn').classList.toggle('active', tab==='menu');
   document.getElementById('tabTagBtn').classList.toggle('active', tab==='tags');
   if(tab==='list') renderList();
   else if(tab==='search'){ renderSearchTagChips(); renderSaveSlots(); renderSearchResults(); }
+  else if(tab==='menu') renderMenuList();
   else renderTagManage();
 }
 
@@ -566,7 +613,9 @@ function openDetail(id){
     <div class="chip-row" style="margin-bottom:14px;">${(r.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('') || '<span style="color:var(--sub);font-size:.8rem;">タグなし</span>'}</div>
     <div class="field"><label>材料</label>${groupsHtml || '<div style="color:var(--sub);font-size:.85rem;">未入力</div>'}</div>
     <div class="field"><label>作り方</label>${stepsHtml || '<div style="color:var(--sub);font-size:.85rem;">未入力</div>'}</div>
+    <div class="field"><label>献立リストに追加</label><div id="addToMenuArea"></div></div>
   `;
+  renderAddToMenuArea(r.id);
   document.getElementById('detailOverlay').hidden = false;
 }
 function closeDetail(){ document.getElementById('detailOverlay').hidden = true; detailId = null; }
@@ -857,6 +906,161 @@ function saveRecipe(){
   saveAll();
   closeModal();
   renderList();
+}
+
+/* ---------- meal lists (献立) ---------- */
+function renderMenuList(){
+  const grid = document.getElementById('menuGrid');
+  const addBtn = document.getElementById('addMenuBtn');
+  if(addBtn) addBtn.disabled = mealLists.length>=3;
+  if(mealLists.length===0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">献立リストがまだありません。「＋ 献立リスト追加」から作成しましょう。</div>`;
+    return;
+  }
+  grid.innerHTML = mealLists.map(m=>{
+    const total = (m.groups||[]).reduce((s,g)=>s+(g.recipeIds||[]).length,0);
+    return `<div class="recipe-card" onclick="openMenuModal('${m.id}')">
+      <h3>${escapeHtml(m.name||'(名称未設定)')}</h3>
+      <div class="meta">${(m.groups||[]).length}グループ ／ レシピ${total}件</div>
+    </div>`;
+  }).join('');
+}
+function addMenuList(){
+  if(mealLists.length>=3){ alert('献立リストは3つまで保存できます。'); return; }
+  const name = prompt('献立リスト名を入力してください', '');
+  if(name===null) return;
+  const m = { id:uid(), name:name.trim()||'新しい献立リスト', groups:[{name:'', recipeIds:[]}] };
+  mealLists.push(m);
+  saveMealLists();
+  renderMenuList();
+  openMenuModal(m.id);
+}
+let curMenuId = null;
+function openMenuModal(id){
+  curMenuId = id;
+  const m = mealLists.find(x=>x.id===id); if(!m) return;
+  document.getElementById('menu-name').value = m.name||'';
+  renderMenuGroups();
+  document.getElementById('menuOverlay').hidden = false;
+}
+function closeMenuModal(){
+  document.getElementById('menuOverlay').hidden = true;
+  curMenuId = null;
+  renderMenuList();
+}
+function updateMenuName(val){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  m.name = val; saveMealLists();
+}
+function addMenuGroup(){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  m.groups.push({name:'', recipeIds:[]});
+  saveMealLists(); renderMenuGroups();
+}
+function removeMenuGroup(gi){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  m.groups.splice(gi,1);
+  if(m.groups.length===0) m.groups.push({name:'', recipeIds:[]});
+  saveMealLists(); renderMenuGroups();
+}
+function updateMenuGroupName(gi, val){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  m.groups[gi].name = val; saveMealLists();
+}
+function removeRecipeFromGroup(gi, rid){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  m.groups[gi].recipeIds = m.groups[gi].recipeIds.filter(x=>x!==rid);
+  saveMealLists(); renderMenuGroups();
+}
+function addRecipeToGroup(gi, rid){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  if(!m.groups[gi].recipeIds.includes(rid)) m.groups[gi].recipeIds.push(rid);
+  saveMealLists(); renderMenuGroups();
+}
+function renderMenuGroups(){
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  const wrap = document.getElementById('menuGroupsWrap');
+  wrap.innerHTML = m.groups.map((g,gi)=>{
+    const chips = (g.recipeIds||[]).map(rid=>{
+      const r = recipes.find(x=>x.id===rid);
+      const title = r ? r.title : '(削除済みレシピ)';
+      return `<span class="tag-chip">${escapeHtml(title)} <span class="x" onclick="removeRecipeFromGroup(${gi},'${rid}')">×</span></span>`;
+    }).join('') || '<span style="color:var(--sub);font-size:.8rem;">まだレシピがありません</span>';
+    return `
+    <div class="ing-group" style="margin-bottom:12px;">
+      <div class="ing-group-head">
+        <input type="text" placeholder="グループ名（空欄可）" value="${escapeHtml(g.name)}" oninput="updateMenuGroupName(${gi}, this.value)">
+        <button class="btn ghost" onclick="removeMenuGroup(${gi})" style="margin-left:auto;">グループ削除</button>
+      </div>
+      <div class="chip-row" style="margin-bottom:8px;">${chips}</div>
+      <div class="tag-input-wrap" style="position:relative;">
+        <input type="text" placeholder="レシピ名で検索して追加" oninput="renderMenuRecipeSuggest(${gi}, this.value)" onfocus="renderMenuRecipeSuggest(${gi}, this.value)">
+        <div class="tag-suggest" id="menuSuggest-${gi}"></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderMenuRecipeSuggest(gi, query){
+  const box = document.getElementById(`menuSuggest-${gi}`);
+  if(!box) return;
+  const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  const q = query.trim().toLowerCase();
+  const already = new Set(m.groups[gi].recipeIds);
+  const candidates = recipes.filter(r=>!already.has(r.id));
+  let list;
+  if(!q){ list = candidates.slice(0,8); }
+  else{
+    const exact = candidates.filter(r=>r.title.toLowerCase()===q);
+    const starts = candidates.filter(r=>r.title.toLowerCase().startsWith(q) && r.title.toLowerCase()!==q);
+    const partial = candidates.filter(r=>r.title.toLowerCase().includes(q) && !r.title.toLowerCase().startsWith(q));
+    list = [...exact, ...starts, ...partial].slice(0,8);
+  }
+  if(list.length===0){ box.innerHTML=''; return; }
+  box.innerHTML = list.map(r=>`<div onclick="addRecipeToGroup(${gi}, '${r.id}'); this.parentElement.innerHTML='';">${escapeHtml(r.title)}</div>`).join('');
+}
+function deleteMenuList(){
+  if(!curMenuId) return;
+  if(!confirm('この献立リストを削除しますか？')) return;
+  mealLists = mealLists.filter(x=>x.id!==curMenuId);
+  saveMealLists();
+  document.getElementById('menuOverlay').hidden = true;
+  curMenuId = null;
+  renderMenuList();
+}
+
+/* ---------- add-to-menu widget (recipe detail) ---------- */
+function renderAddToMenuArea(recipeId){
+  const area = document.getElementById('addToMenuArea');
+  if(!area) return;
+  if(mealLists.length===0){
+    area.innerHTML = '<div style="font-size:.8rem;color:var(--sub);">「献立」タブでリストを作成すると、ここから追加できます。</div>';
+    return;
+  }
+  area.innerHTML = `
+    <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+      <select id="addToMenuListSel" onchange="refreshAddToMenuGroupOptions()" style="padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);font-size:.85rem;">
+        ${mealLists.map(m=>`<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('')}
+      </select>
+      <select id="addToMenuGroupSel" style="padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);font-size:.85rem;"></select>
+      <button class="btn secondary small" onclick="addCurrentRecipeToMenu('${recipeId}')">追加</button>
+    </div>`;
+  refreshAddToMenuGroupOptions();
+}
+function refreshAddToMenuGroupOptions(){
+  const sel = document.getElementById('addToMenuListSel');
+  const gsel = document.getElementById('addToMenuGroupSel');
+  if(!sel || !gsel) return;
+  const m = mealLists.find(x=>x.id===sel.value);
+  gsel.innerHTML = (m ? m.groups : []).map((g,gi)=>`<option value="${gi}">${g.name ? escapeHtml(g.name) : '(グループなし)'}</option>`).join('');
+}
+function addCurrentRecipeToMenu(recipeId){
+  const listId = document.getElementById('addToMenuListSel').value;
+  const gi = parseInt(document.getElementById('addToMenuGroupSel').value, 10);
+  const m = mealLists.find(x=>x.id===listId);
+  if(!m || !m.groups[gi]) return;
+  if(!m.groups[gi].recipeIds.includes(recipeId)) m.groups[gi].recipeIds.push(recipeId);
+  saveMealLists();
+  alert(`「${m.name}」に追加しました。`);
 }
 
 /* ---------- search ---------- */
