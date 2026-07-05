@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>レシピ</title>
-<link rel="icon" href="icon-rla.png" type="image/png">
-<link rel="apple-touch-icon" href="icon-rla.png">
+<title>レシピリスト</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
@@ -196,6 +194,7 @@ section[hidden]{display:none;}
 .helper-dock{
   position:sticky; bottom:0; z-index:3; background:var(--panel);
   border-top:1px solid var(--line); padding:10px 18px;
+  transition: transform .12s ease-out;
 }
 .helper-dock-label{font-size:.72rem; color:var(--sub); margin-bottom:6px;}
 .helper-bar{
@@ -224,7 +223,9 @@ section[hidden]{display:none;}
   background: repeating-linear-gradient(var(--panel-2), var(--panel-2) 27px, var(--line) 28px);
   line-height:28px; font-size:.88rem; white-space:pre-wrap; padding:0 2px;
 }
-.step-card .del-step{background:none;border:none;color:var(--danger);font-size:.75rem;}
+.step-card .del-step{background:none;border:none;color:var(--danger);font-size:.75rem; padding:2px 6px;}
+.step-card .step-move-btn{background:none;border:none;color:var(--primary-dark);font-size:.8rem; padding:2px 7px;}
+.step-card .step-move-btn[disabled]{color:var(--sub); opacity:.35;}
 .add-step-row{display:flex; justify-content:flex-end;}
 .add-step-btn{
   background:var(--primary-soft); color:var(--primary-dark); border:none; border-radius:999px;
@@ -285,6 +286,7 @@ section[hidden]{display:none;}
       <button class="tab-btn" id="tabTagBtn" onclick="switchTab('tags')">タグ管理</button>
     </nav>
     <div style="display:flex; gap:6px;">
+      <button class="tab-btn" onclick="openUnitsModal()">分量チップ設定</button>
       <button class="tab-btn" onclick="exportData()">書き出し</button>
       <button class="tab-btn" onclick="document.getElementById('importFileInput').click()">読み込み</button>
       <input type="file" id="importFileInput" accept="application/json" style="display:none"
@@ -381,6 +383,11 @@ section[hidden]{display:none;}
       </div>
       <div class="field" id="f-dates" style="display:flex; gap:20px; font-size:.78rem; color:var(--sub);"></div>
 
+      <div class="field" style="max-width:160px;">
+        <label>何人分</label>
+        <input type="text" id="f-servings" placeholder="例）2" oninput="renderCalorieEstimate()">
+      </div>
+
       <div class="field">
         <label>タグ</label>
         <div class="tag-input-wrap" id="tagInputWrap">
@@ -396,6 +403,15 @@ section[hidden]{display:none;}
         <label>材料</label>
         <div class="ing-columns" id="ingColumns"></div>
         <button class="btn secondary small" style="margin-top:6px;" onclick="addIngredientGroup()">＋ グループ追加</button>
+      </div>
+
+      <div class="field">
+        <label>カロリー（目安）</label>
+        <div id="calorieEstimateBox" style="font-size:.8rem; color:var(--sub); background:var(--panel-2); border:1px dashed var(--line); border-radius:10px; padding:10px 12px; line-height:1.6;"></div>
+        <div style="margin-top:8px; max-width:220px;">
+          <label style="font-size:.75rem; color:var(--sub); display:block; margin-bottom:4px;">手動で上書き（任意・kcal）</label>
+          <input type="text" id="f-calorie-override" placeholder="例）450" oninput="renderCalorieEstimate()">
+        </div>
       </div>
 
       <div class="field">
@@ -450,6 +466,25 @@ section[hidden]{display:none;}
   </div>
 </div>
 
+<div class="overlay" id="unitsOverlay" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>分量チップの設定</h2>
+      <button class="modal-close" onclick="closeUnitsModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.78rem; color:var(--sub); margin-bottom:12px;">
+        入力補助チップと、カロリー概算計算の単位換算（g/単位）を管理します。区切り記号など換算が不要なものは「g/単位」を空欄にしてください。
+      </div>
+      <div id="unitsListWrap"></div>
+      <button class="btn secondary small" style="margin-top:8px;" onclick="addUnitDef()">＋ チップ追加</button>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" onclick="closeUnitsModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ---------- storage ---------- */
 const LS_RECIPES='recipeApp_recipes', LS_TAGS='recipeApp_tags', LS_UPDATED='recipeApp_lastUpdated', LS_MENUS='recipeApp_mealLists';
@@ -481,7 +516,7 @@ function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'
 
 /* ---------- export / import ---------- */
 async function exportData(){
-  const data = { recipes, tags, mealLists, exportedAt: nowJSTISO() };
+  const data = { recipes, tags, mealLists, unitDefs, exportedAt: nowJSTISO() };
   const json = JSON.stringify(data, null, 2);
   const stamp = formatJST(nowJSTISO()).replace(/[/: ]/g,'-');
   const filename = `recipe-list-${stamp}.json`;
@@ -541,6 +576,10 @@ function importData(file){
         if(idx>=0) mealLists[idx]=m; else mealLists.push(m);
       });
       saveMealLists();
+    }
+    if(Array.isArray(data.unitDefs) && data.unitDefs.length){
+      unitDefs = data.unitDefs;
+      saveUnits();
     }
     renderList(); renderTagManage();
     if(!document.getElementById('view-menu').hidden) renderMenuList();
@@ -613,12 +652,20 @@ function openDetail(id){
     </div>`;
   const stepsHtml = (r.steps||[]).map((s,i)=>`
     <div class="step-card"><div class="step-label">手順${i+1}</div><div class="step-lines">${escapeHtml(s)}</div></div>`).join('');
+  const totalKcal = (r.calorieOverride!=null) ? r.calorieOverride : (r.calorieEstimate||0);
+  const servingsNum = r.servings ? parseFloat(r.servings) : null;
+  let calorieHtml = `<div>${r.calorieOverride!=null ? '手動設定' : '自動概算'}：約 ${Math.round(totalKcal)} kcal</div>`;
+  if(servingsNum && servingsNum>0){
+    calorieHtml += `<div>1人分の目安：約 ${Math.round(totalKcal/servingsNum)} kcal（${r.servings}人分）</div>`;
+  }
+  calorieHtml += `<div style="font-size:.72rem;">※あくまで目安です。</div>`;
   document.getElementById('detailBody').innerHTML = `
     <div style="font-size:.75rem;color:var(--sub);margin-bottom:10px;">
-      登録日: ${formatJST(r.createdAt)} ／ 最終更新: ${formatJST(r.updatedAt)} ${r.favorite? ' ／ ★お気に入り':''}
+      登録日: ${formatJST(r.createdAt)} ／ 最終更新: ${formatJST(r.updatedAt)} ${r.favorite? ' ／ ★お気に入り':''} ${r.servings? ` ／ ${escapeHtml(r.servings)}人分`:''}
     </div>
     <div class="chip-row" style="margin-bottom:14px;">${(r.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('') || '<span style="color:var(--sub);font-size:.8rem;">タグなし</span>'}</div>
     <div class="field"><label>材料</label>${groupsHtml || '<div style="color:var(--sub);font-size:.85rem;">未入力</div>'}</div>
+    <div class="field"><label>カロリー（目安）</label><div style="font-size:.85rem;color:var(--sub);background:var(--panel-2);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;line-height:1.6;">${calorieHtml}</div></div>
     <div class="field"><label>作り方</label>${stepsHtml || '<div style="color:var(--sub);font-size:.85rem;">未入力</div>'}</div>
     <div class="field"><label>献立リストに追加</label><div id="addToMenuArea"></div></div>
   `;
@@ -656,6 +703,8 @@ function openRecipeModal(recipe){
 
   document.getElementById('modalTitle').textContent = recipe ? 'レシピを編集' : 'レシピを追加';
   document.getElementById('f-title').value = recipe ? recipe.title : '';
+  document.getElementById('f-servings').value = recipe && recipe.servings ? recipe.servings : '';
+  document.getElementById('f-calorie-override').value = (recipe && recipe.calorieOverride!=null) ? recipe.calorieOverride : '';
   updateFavButton();
   const datesEl = document.getElementById('f-dates');
   if(recipe){
@@ -668,6 +717,7 @@ function openRecipeModal(recipe){
   renderSteps();
   helperContext = 'amount';
   renderHelperDock();
+  renderCalorieEstimate();
   document.getElementById('tagTextInput').value='';
   hideTagSuggest();
   document.getElementById('modalOverlay').hidden = false;
@@ -753,12 +803,12 @@ function addIngredientGroup(){
   const name = prompt('グループ名を入力（例：A、下味 など）', '');
   if(name===null) return;
   curGroups.push({group:name.trim(), items:[{name:'',amount:''}]});
-  renderIngredients(); renderHelperDock();
+  renderIngredients(); renderHelperDock(); renderCalorieEstimate();
 }
 function removeIngredientGroup(gi){
   if(curGroups.length<=1){ alert('少なくとも1つのグループが必要です。'); return; }
   curGroups.splice(gi,1);
-  renderIngredients(); renderHelperDock();
+  renderIngredients(); renderHelperDock(); renderCalorieEstimate();
 }
 function addIngredientRow(gi){
   curGroups[gi].items.push({name:'',amount:''});
@@ -767,11 +817,12 @@ function addIngredientRow(gi){
 function removeIngredientRow(gi, ii){
   curGroups[gi].items.splice(ii,1);
   if(curGroups[gi].items.length===0) curGroups[gi].items.push({name:'',amount:''});
-  renderIngredients(); renderHelperDock(); renderTagCandidates();
+  renderIngredients(); renderHelperDock(); renderTagCandidates(); renderCalorieEstimate();
 }
 function updateIngredientField(gi, ii, key, val){
   curGroups[gi].items[ii][key] = val;
   if(key==='name'){ renderHelperDock(); renderTagCandidates(); }
+  renderCalorieEstimate();
 }
 function updateGroupName(gi, val){ curGroups[gi].group = val; renderHelperDock(); }
 
@@ -820,7 +871,145 @@ function renderIngredients(){
   };
   container.innerHTML = `<div class="ing-col">${curGroups.map((g,gi)=>renderGroup(gi)).join('')}</div>`;
 }
-const AMOUNT_HELPERS = ['大さじ','小さじ','／','g','ml','少々'];
+/* ---------- 食材カロリー概算DB（100gあたりkcal・目安値） ---------- */
+const FOOD_DB = [
+  ['鶏むね肉',145],['鶏もも肉',200],['鶏ささみ',105],['鶏ひき肉',166],
+  ['豚バラ肉',386],['豚ロース肉',263],['豚もも肉',183],['豚ひき肉',221],['豚肩ロース肉',253],
+  ['牛肩ロース肉',295],['牛もも肉',182],['牛バラ肉',380],['牛ひき肉',251],['合いびき肉',236],
+  ['ベーコン',400],['ウインナー',321],['ソーセージ',321],['ハム',196],['サラダチキン',113],
+  ['鮭',133],['さば',202],['さんま',297],['まぐろ赤身',125],['まぐろトロ',344],
+  ['ぶり',257],['たら',77],['あじ',126],['いわし',169],['えび',90],['いか',88],['たこ',76],
+  ['帆立',72],['あさり',30],['しじみ',54],['ツナ缶',150],['かに風味かまぼこ',89],
+  ['ちくわ',121],['はんぺん',94],['卵',151],['うずら卵',157],['牛乳',67],['豆乳',46],
+  ['生クリーム',433],['ヨーグルト',62],['プロセスチーズ',339],['とろけるチーズ',330],
+  ['バター',745],['マーガリン',769],['木綿豆腐',72],['絹豆腐',56],['油揚げ',377],
+  ['厚揚げ',143],['納豆',200],['枝豆',135],['玉ねぎ',37],['にんじん',39],['じゃがいも',76],
+  ['さつまいも',132],['かぼちゃ',91],['トマト',20],['ミニトマト',29],['きゅうり',14],
+  ['なす',22],['ピーマン',22],['パプリカ',30],['キャベツ',23],['白菜',14],['レタス',12],
+  ['ほうれん草',20],['小松菜',14],['もやし',14],['ブロッコリー',33],['カリフラワー',28],
+  ['大根',18],['かぶ',20],['ごぼう',65],['れんこん',66],['長ねぎ',28],['にら',18],
+  ['にんにく',136],['生姜',30],['しめじ',18],['えのき',22],['しいたけ',25],['まいたけ',15],
+  ['エリンギ',24],['きくらげ',167],['アボカド',187],['バナナ',86],['りんご',54],['みかん',45],
+  ['レモン',54],['米',168],['玄米',165],['食パン',264],['ロールパン',316],['うどん',105],
+  ['そば',132],['パスタ',150],['中華麺',162],['春雨',342],['片栗粉',330],['小麦粉',368],
+  ['パン粉',373],['砂糖',384],['塩',0],['醤油',71],['味噌',192],['みりん',241],
+  ['料理酒',102],['酢',25],['サラダ油',921],['ごま油',921],['オリーブオイル',921],
+  ['マヨネーズ',703],['ケチャップ',106],['中濃ソース',119],['ポン酢',60],['めんつゆ',44],
+  ['コンソメ',233],['中華だし',210],['だしの素',223],['カレールー',474],['ハヤシルー',468],
+  ['ごま',599],['かつお節',356],['海苔',188],['青のり',249],['わかめ',138],['昆布',138],
+  ['豆板醤',86],['甜麺醤',249],['オイスターソース',105],['コーン缶',82],['ミックスベジタブル',67]
+].map(([name,kcal100])=>({name,kcal100}));
+
+function matchFood(ingredientName){
+  const n = (ingredientName||'').trim();
+  if(!n) return null;
+  let best = null;
+  for(const f of FOOD_DB){
+    if(n.includes(f.name)){
+      if(!best || f.name.length>best.name.length) best = f;
+    }
+  }
+  return best;
+}
+/* 分量テキストをおおよそのグラム数に変換（設定済みの単位チップを利用） */
+function parseAmountToGrams(amountStr){
+  if(!amountStr) return null;
+  let s = String(amountStr).trim();
+  // 全角数字・全角スラッシュを半角に正規化
+  s = s.replace(/[\uFF10-\uFF19]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0xFEE0));
+  s = s.replace(/／/g, '/');
+  const sortedUnits = unitDefs.filter(u=>u.label && u.grams!=null).sort((a,b)=>b.label.length-a.label.length);
+  for(const u of sortedUnits){
+    if(s.includes(u.label)){
+      const m = s.match(/(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?/);
+      let qty = 1;
+      if(m){ qty = parseFloat(m[1]); if(m[2]) qty = qty/parseFloat(m[2]); }
+      return qty * u.grams;
+    }
+  }
+  const bare = s.match(/^(\d+(?:\.\d+)?)(?:\s*\/\s*(\d+(?:\.\d+)?))?\s*$/);
+  if(bare){
+    let qty = parseFloat(bare[1]);
+    if(bare[2]) qty = qty/parseFloat(bare[2]);
+    return qty; // 単位が無ければグラムとみなす
+  }
+  return null;
+}
+function computeCalorieEstimate(groups){
+  let total = 0, matched = 0, totalItems = 0;
+  const unmatched = [];
+  groups.forEach(g=>(g.items||[]).forEach(it=>{
+    if(!it.name && !it.amount) return;
+    totalItems++;
+    const food = matchFood(it.name||'');
+    const grams = parseAmountToGrams(it.amount||'');
+    if(food && grams!=null){ total += food.kcal100/100*grams; matched++; }
+    else unmatched.push(it.name || '(名称未入力)');
+  }));
+  return { total, matched, totalItems, unmatched };
+}
+function renderCalorieEstimate(){
+  const box = document.getElementById('calorieEstimateBox');
+  if(!box) return;
+  const overrideRaw = document.getElementById('f-calorie-override').value.trim();
+  const override = overrideRaw ? parseFloat(overrideRaw) : null;
+  const est = computeCalorieEstimate(curGroups);
+  const servingsRaw = document.getElementById('f-servings').value.trim();
+  const servings = servingsRaw ? parseFloat(servingsRaw) : null;
+  const useOverride = (override!=null && !isNaN(override));
+  const totalKcal = useOverride ? override : est.total;
+  const lines = [];
+  if(useOverride){
+    lines.push(`手動設定：約 ${Math.round(override)} kcal`);
+  } else {
+    lines.push(`材料からの自動概算：約 ${Math.round(est.total)} kcal（${est.matched}/${est.totalItems}品目を認識）`);
+    if(est.unmatched.length) lines.push(`未認識の材料：${est.unmatched.filter(Boolean).join('、')}`);
+  }
+  if(servings && servings>0){
+    lines.push(`1人分の目安：約 ${Math.round(totalKcal/servings)} kcal（${servings}人分として計算）`);
+  }
+  lines.push('※あくまで目安です。正確な数値は栄養成分表等でご確認ください。');
+  box.innerHTML = lines.map(l=>`<div>${escapeHtml(l)}</div>`).join('');
+}
+
+/* ---------- 分量チップ / 単位設定 ---------- */
+const LS_UNITS = 'recipeApp_units';
+function defaultUnitDefs(){
+  return [
+    {label:'大さじ', grams:15},
+    {label:'小さじ', grams:5},
+    {label:'カップ', grams:200},
+    {label:'／', grams:null},
+    {label:'g', grams:1},
+    {label:'ml', grams:1},
+    {label:'少々', grams:1},
+  ];
+}
+let unitDefs = JSON.parse(localStorage.getItem(LS_UNITS) || 'null') || defaultUnitDefs();
+function saveUnits(){ localStorage.setItem(LS_UNITS, JSON.stringify(unitDefs)); }
+function openUnitsModal(){ renderUnitsList(); document.getElementById('unitsOverlay').hidden = false; }
+function closeUnitsModal(){ document.getElementById('unitsOverlay').hidden = true; }
+function renderUnitsList(){
+  const wrap = document.getElementById('unitsListWrap');
+  wrap.innerHTML = unitDefs.map((u,i)=>`
+    <div style="display:flex; gap:8px; align-items:center; padding:8px 0; border-bottom:1px solid var(--line);">
+      <input type="text" value="${escapeHtml(u.label)}" style="flex:1;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);"
+        oninput="updateUnitLabel(${i}, this.value)">
+      <input type="number" step="any" value="${u.grams==null?'':u.grams}" placeholder="g/単位(任意)"
+        style="width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);"
+        oninput="updateUnitGrams(${i}, this.value)">
+      <button class="btn ghost" style="color:var(--danger);" onclick="deleteUnitDef(${i})">削除</button>
+    </div>
+  `).join('');
+}
+function updateUnitLabel(i, val){ unitDefs[i].label = val; saveUnits(); renderHelperDock(); }
+function updateUnitGrams(i, val){ unitDefs[i].grams = (val===''||val==null) ? null : parseFloat(val); saveUnits(); renderCalorieEstimate(); }
+function addUnitDef(){ unitDefs.push({label:'新しい単位', grams:null}); saveUnits(); renderUnitsList(); renderHelperDock(); }
+function deleteUnitDef(i){
+  if(!confirm('このチップを削除しますか？')) return;
+  unitDefs.splice(i,1); saveUnits(); renderUnitsList(); renderHelperDock(); renderCalorieEstimate();
+}
+
 let helperContext = 'amount'; // 'amount' | 'step'
 function setHelperContext(ctx){ helperContext = ctx; renderHelperDock(); }
 function renderHelperDock(){
@@ -838,8 +1027,8 @@ function renderHelperDock(){
       stepLabels.map(n=>`<button type="button" class="helper-chip tone-step" onclick="applyStepHelper('${n}')">${n}</button>`).join('');
   } else {
     label.textContent = '分量の入力補助（欄をタップしてから選択）';
-    chips.innerHTML = AMOUNT_HELPERS.map(h=>
-      `<button type="button" class="helper-chip" onclick="applyAmountHelper('${h}')">${h}</button>`).join('');
+    chips.innerHTML = unitDefs.map(u=>
+      `<button type="button" class="helper-chip" onclick="applyAmountHelper('${u.label.replace(/'/g,"\\'")}')">${escapeHtml(u.label)}</button>`).join('');
   }
 }
 function applyAmountHelper(text){
@@ -867,11 +1056,28 @@ function removeStep(i){
   if(curSteps.length<=1){ curSteps=['']; } else { curSteps.splice(i,1); }
   renderSteps(); renderHelperDock();
 }
+function moveStepUp(i){
+  if(i<=0) return;
+  [curSteps[i-1], curSteps[i]] = [curSteps[i], curSteps[i-1]];
+  renderSteps(); renderHelperDock();
+}
+function moveStepDown(i){
+  if(i>=curSteps.length-1) return;
+  [curSteps[i+1], curSteps[i]] = [curSteps[i], curSteps[i+1]];
+  renderSteps(); renderHelperDock();
+}
 function updateStep(i,val){ curSteps[i]=val; }
 function renderSteps(){
   document.getElementById('stepsWrap').innerHTML = curSteps.map((s,i)=>`
     <div class="step-card">
-      <div class="step-label"><span>手順${i+1}</span><button class="del-step" onclick="removeStep(${i})">削除</button></div>
+      <div class="step-label">
+        <span>手順${i+1}</span>
+        <span style="display:flex; gap:4px;">
+          <button class="step-move-btn" onclick="moveStepUp(${i})" ${i===0?'disabled':''}>↑</button>
+          <button class="step-move-btn" onclick="moveStepDown(${i})" ${i===curSteps.length-1?'disabled':''}>↓</button>
+          <button class="del-step" onclick="removeStep(${i})">削除</button>
+        </span>
+      </div>
       <textarea rows="2" onfocus="lastFocusedStepTextarea=this; setHelperContext('step')"
         oninput="updateStep(${i}, this.value)">${escapeHtml(s)}</textarea>
     </div>`).join('');
@@ -898,15 +1104,22 @@ function saveRecipe(){
     .filter(g=>g.items.length>0);
   const cleanSteps = curSteps.map(s=>s.trim()).filter(s=>s.length>0);
   const nowIso = nowJSTISO();
+  const servingsRaw = document.getElementById('f-servings').value.trim();
+  const servings = servingsRaw ? servingsRaw : '';
+  const overrideRaw = document.getElementById('f-calorie-override').value.trim();
+  const calorieOverride = overrideRaw ? parseFloat(overrideRaw) : null;
+  const calorieEstimate = Math.round(computeCalorieEstimate(cleanGroups).total);
 
   if(editingRecipeId){
     const r = recipes.find(x=>x.id===editingRecipeId);
     r.title=title; r.favorite=curFavorite; r.tags=[...curTagsChips];
     r.ingredientGroups=cleanGroups; r.steps=cleanSteps; r.updatedAt=nowIso;
+    r.servings=servings; r.calorieOverride=calorieOverride; r.calorieEstimate=calorieEstimate;
   } else {
     recipes.push({
       id: uid(), title, favorite: curFavorite, tags:[...curTagsChips],
       ingredientGroups: cleanGroups, steps: cleanSteps,
+      servings, calorieOverride, calorieEstimate,
       createdAt: nowIso, updatedAt: nowIso
     });
   }
@@ -1264,6 +1477,19 @@ document.addEventListener('click', (e)=>{
   if(wrap && !wrap.contains(e.target)) hideTagSuggest();
 });
 window.addEventListener('resize', ()=>{ if(!document.getElementById('modalOverlay').hidden) renderIngredients(); });
+
+/* スマホのソフトウェアキーボード表示時、入力補助ドックがキーボードに隠れないよう押し上げる */
+function adjustHelperDockForKeyboard(){
+  const dock = document.getElementById('helperDock');
+  if(!dock || !window.visualViewport) return;
+  const vv = window.visualViewport;
+  const covered = window.innerHeight - vv.height - vv.offsetTop;
+  dock.style.transform = covered > 20 ? `translateY(-${Math.round(covered)}px)` : '';
+}
+if(window.visualViewport){
+  window.visualViewport.addEventListener('resize', adjustHelperDockForKeyboard);
+  window.visualViewport.addEventListener('scroll', adjustHelperDockForKeyboard);
+}
 
 renderUpdatedLine();
 renderList();
