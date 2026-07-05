@@ -361,6 +361,67 @@ function saveAll(){
 }
 function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : Date.now()+'-'+Math.random().toString(16).slice(2)); }
 
+/* ---------- export / import ---------- */
+async function exportData(){
+  const data = { recipes, tags, exportedAt: nowJSTISO() };
+  const json = JSON.stringify(data, null, 2);
+  const stamp = formatJST(nowJSTISO()).replace(/[/: ]/g,'-');
+  const filename = `recipe-list-${stamp}.json`;
+
+  // iOS Safari等は <a download> でのBlob保存が機能しないことが多いため、
+  // 共有シート経由（ファイルに保存）をまず試す。
+  if(window.isSecureContext && navigator.canShare){
+    try{
+      const file = new File([json], filename, {type:'application/json'});
+      if(navigator.canShare({files:[file]})){
+        await navigator.share({files:[file], title:'レシピリストの書き出し', text:filename});
+        return;
+      }
+    }catch(err){
+      if(err && err.name === 'AbortError') return; // 共有シートをキャンセルした場合は何もしない
+      // それ以外のエラーは下のフォールバックへ
+    }
+  }
+  // フォールバック：通常のダウンロード方式（PCブラウザなど）
+  try{
+    const blob = new Blob([json], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  }catch(err){
+    alert('書き出しに失敗しました。ブラウザやOSの設定をご確認ください。');
+  }
+}
+function importData(file){
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    let data;
+    try{ data = JSON.parse(e.target.result); }
+    catch(err){ alert('JSONとして読み込めませんでした。ファイルを確認してください。'); return; }
+    if(!data || !Array.isArray(data.recipes)){ alert('レシピリストのデータ形式ではないようです。'); return; }
+    const proceed = confirm(
+      `${data.recipes.length}件のレシピを読み込みます。\n` +
+      `同じIDのレシピは上書き、それ以外は追加されます。\n続けますか？`
+    );
+    if(!proceed) return;
+    (data.tags||[]).forEach(t=>{
+      if(!tags.some(x=>x.toLowerCase()===String(t).toLowerCase())) tags.push(t);
+    });
+    let added=0, updated=0;
+    data.recipes.forEach(r=>{
+      if(!r || !r.id || !r.title) return;
+      const idx = recipes.findIndex(x=>x.id===r.id);
+      if(idx>=0){ recipes[idx]=r; updated++; } else { recipes.push(r); added++; }
+    });
+    saveAll();
+    renderList(); renderTagManage();
+    alert(`読み込み完了：追加 ${added}件 / 上書き ${updated}件`);
+  };
+  reader.readAsText(file);
+}
+
 /* ---------- tabs ---------- */
 function switchTab(tab){
   document.getElementById('view-list').hidden = tab!=='list';
