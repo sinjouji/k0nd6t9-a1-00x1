@@ -227,6 +227,43 @@ section[hidden]{display:none;}
 @media (max-width:640px){
   .ing-columns{flex-direction:column;}
 }
+
+/* search view */
+.search-cond{display:flex; flex-direction:column; gap:12px; margin-bottom:18px;}
+.cond-row{display:flex; flex-direction:column; gap:5px;}
+.cond-row label{font-size:.78rem; font-weight:700;}
+.cond-row input{padding:10px 12px; border-radius:10px; border:1px solid; font-size:.9rem;}
+.cond-and label{color:#2C6E63;}
+.cond-and input{background:#E7F3EF; border-color:#9FD3C4;}
+.cond-or label{color:#8A6A1E;}
+.cond-or input{background:#FBF0D9; border-color:#E9CC8E;}
+.cond-not label{color:#8B3A3A;}
+.cond-not input{background:#F3E4E1; border-color:#E4C9C4;}
+
+.tag-filter-chip{
+  border-radius:999px; padding:5px 12px; font-size:.78rem; font-weight:500;
+  background:var(--panel-2); color:var(--sub); border:1px solid var(--line);
+}
+.tag-filter-chip.state-and{background:#E7F3EF; color:#2C6E63; border-color:#9FD3C4;}
+.tag-filter-chip.state-or{background:#FBF0D9; color:#8A6A1E; border-color:#E9CC8E;}
+.tag-filter-chip.state-not{background:#F3E4E1; color:#8B3A3A; border-color:#E4C9C4;}
+.tag-filter-chip b{font-weight:800; margin-left:3px;}
+
+.fav-filter-row{display:flex; gap:6px; flex-wrap:wrap;}
+.fav-filter-btn{
+  border:1px solid var(--line); background:var(--panel-2); border-radius:999px;
+  padding:7px 14px; font-size:.82rem; color:var(--sub);
+}
+.fav-filter-btn.active{background:var(--primary); color:#fff; border-color:var(--primary);}
+
+.save-slot-row{display:flex; gap:8px; flex-wrap:wrap;}
+.save-slot{
+  border:1px dashed var(--line); border-radius:10px; padding:9px 11px; font-size:.75rem;
+  color:var(--sub); background:var(--panel-2); flex:1; min-width:170px;
+}
+.save-slot.filled{border-style:solid; color:var(--ink); background:var(--panel);}
+.save-slot .slot-actions{display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;}
+.save-slot .slot-actions button{font-size:.7rem; padding:4px 9px;}
 </style>
 </head>
 <body>
@@ -236,6 +273,7 @@ section[hidden]{display:none;}
     <div class="brand">レシピリスト<small id="updatedLine">最終更新: -</small></div>
     <nav>
       <button class="tab-btn active" id="tabListBtn" onclick="switchTab('list')">レシピ</button>
+      <button class="tab-btn" id="tabSearchBtn" onclick="switchTab('search')">検索</button>
       <button class="tab-btn" id="tabTagBtn" onclick="switchTab('tags')">タグ管理</button>
     </nav>
     <div style="display:flex; gap:6px;">
@@ -254,6 +292,44 @@ section[hidden]{display:none;}
       <button class="btn" onclick="openRecipeModal()">＋ レシピ追加</button>
     </div>
     <div class="recipe-grid" id="recipeGrid"></div>
+  </section>
+
+  <section id="view-search" hidden>
+    <div class="search-cond">
+      <div class="cond-row cond-and">
+        <label>AND（すべて含む・カンマ区切り）</label>
+        <input type="text" id="searchAnd" placeholder="例）鶏肉, 醤油" oninput="renderSearchResults()">
+      </div>
+      <div class="cond-row cond-or">
+        <label>OR（いずれか含む・カンマ区切り）</label>
+        <input type="text" id="searchOr" placeholder="例）豚肉, 牛肉" oninput="renderSearchResults()">
+      </div>
+      <div class="cond-row cond-not">
+        <label>NOT（含まない・カンマ区切り）</label>
+        <input type="text" id="searchNot" placeholder="例）辛い" oninput="renderSearchResults()">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>タグで絞り込み（タップで指定なし→AND→OR→NOTと切替）</label>
+      <div class="chip-row" id="searchTagChips"></div>
+    </div>
+
+    <div class="field">
+      <label>お気に入り</label>
+      <div class="fav-filter-row">
+        <button class="fav-filter-btn active" data-val="all" onclick="setFavFilter('all')">すべて</button>
+        <button class="fav-filter-btn" data-val="fav" onclick="setFavFilter('fav')">★お気に入りのみ</button>
+        <button class="fav-filter-btn" data-val="nonfav" onclick="setFavFilter('nonfav')">☆お気に入り以外</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>検索条件の保存（最大3件）</label>
+      <div class="save-slot-row" id="saveSlotRow"></div>
+    </div>
+
+    <div class="recipe-grid" id="searchResultGrid"></div>
   </section>
 
   <section id="view-tags" hidden>
@@ -425,10 +501,14 @@ function importData(file){
 /* ---------- tabs ---------- */
 function switchTab(tab){
   document.getElementById('view-list').hidden = tab!=='list';
+  document.getElementById('view-search').hidden = tab!=='search';
   document.getElementById('view-tags').hidden = tab!=='tags';
   document.getElementById('tabListBtn').classList.toggle('active', tab==='list');
+  document.getElementById('tabSearchBtn').classList.toggle('active', tab==='search');
   document.getElementById('tabTagBtn').classList.toggle('active', tab==='tags');
-  if(tab==='list') renderList(); else renderTagManage();
+  if(tab==='list') renderList();
+  else if(tab==='search'){ renderSearchTagChips(); renderSaveSlots(); renderSearchResults(); }
+  else renderTagManage();
 }
 
 /* ---------- recipe list ---------- */
@@ -453,6 +533,7 @@ function quickToggleFav(id){
   const r = recipes.find(x=>x.id===id); if(!r) return;
   r.favorite = !r.favorite; r.updatedAt = nowJSTISO();
   saveAll(); renderList();
+  if(!document.getElementById('view-search').hidden) renderSearchResults();
 }
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -776,6 +857,143 @@ function saveRecipe(){
   saveAll();
   closeModal();
   renderList();
+}
+
+/* ---------- search ---------- */
+let searchTagStates = {}; // tagName -> 'and'|'or'|'not'
+let favFilter = 'all';
+let savedSearches = JSON.parse(localStorage.getItem('recipeApp_savedSearches') || '[null,null,null]');
+
+function splitWords(str){
+  return String(str||'').split(/[,、\s]+/).map(s=>s.trim()).filter(Boolean);
+}
+function recipeSearchAllText(r){
+  const title = r.title||'';
+  const ing = (r.ingredientGroups||[]).flatMap(g=>g.items.map(it=>`${it.name} ${it.amount} ${g.group||''}`)).join(' ');
+  const steps = (r.steps||[]).join(' ');
+  const tagsText = (r.tags||[]).join(' ');
+  return `${title} ${ing} ${steps} ${tagsText}`.toLowerCase();
+}
+function recipeMatchesWord(r, word){
+  return recipeSearchAllText(r).includes(word.toLowerCase());
+}
+function renderSearchTagChips(){
+  const container = document.getElementById('searchTagChips');
+  if(!container) return;
+  if(tags.length===0){ container.innerHTML = '<span style="color:var(--sub);font-size:.8rem;">タグがまだありません</span>'; return; }
+  container.innerHTML = tags.map(t=>{
+    const state = searchTagStates[t] || 'none';
+    const label = state==='and' ? 'AND' : state==='or' ? 'OR' : state==='not' ? 'NOT' : '';
+    return `<button type="button" class="tag-filter-chip state-${state}" onclick="cycleTagFilter('${t.replace(/'/g,"\\'")}')">${escapeHtml(t)}${label?` <b>${label}</b>`:''}</button>`;
+  }).join('');
+}
+function cycleTagFilter(t){
+  const order = [undefined,'and','or','not'];
+  const idx = order.indexOf(searchTagStates[t]);
+  const next = order[(idx+1) % order.length];
+  if(next===undefined) delete searchTagStates[t]; else searchTagStates[t]=next;
+  renderSearchTagChips();
+  renderSearchResults();
+}
+function setFavFilter(v){
+  favFilter = v;
+  document.querySelectorAll('.fav-filter-btn').forEach(b=>b.classList.toggle('active', b.dataset.val===v));
+  renderSearchResults();
+}
+function getCurrentSearchCondition(){
+  return {
+    and: document.getElementById('searchAnd').value,
+    or: document.getElementById('searchOr').value,
+    not: document.getElementById('searchNot').value,
+    tagStates: {...searchTagStates},
+    favFilter
+  };
+}
+function applySearchCondition(cond){
+  document.getElementById('searchAnd').value = cond.and||'';
+  document.getElementById('searchOr').value = cond.or||'';
+  document.getElementById('searchNot').value = cond.not||'';
+  searchTagStates = {...(cond.tagStates||{})};
+  favFilter = cond.favFilter||'all';
+  document.querySelectorAll('.fav-filter-btn').forEach(b=>b.classList.toggle('active', b.dataset.val===favFilter));
+  renderSearchTagChips();
+  renderSearchResults();
+}
+function summarizeCondition(cond){
+  const parts = [];
+  if(cond.and && cond.and.trim()) parts.push('AND:'+cond.and.trim());
+  if(cond.or && cond.or.trim()) parts.push('OR:'+cond.or.trim());
+  if(cond.not && cond.not.trim()) parts.push('NOT:'+cond.not.trim());
+  const tagParts = Object.entries(cond.tagStates||{}).map(([t,s])=>`${s.toUpperCase()}:#${t}`);
+  if(tagParts.length) parts.push(tagParts.join(' '));
+  if(cond.favFilter && cond.favFilter!=='all') parts.push(cond.favFilter==='fav' ? '★のみ' : '☆以外');
+  return parts.length ? parts.join(' / ') : '(条件なし)';
+}
+function renderSaveSlots(){
+  const row = document.getElementById('saveSlotRow');
+  if(!row) return;
+  row.innerHTML = [0,1,2].map(i=>{
+    const s = savedSearches[i];
+    return `
+    <div class="save-slot ${s?'filled':''}">
+      <div>${i+1}. ${s ? escapeHtml(summarizeCondition(s)) : '(空き)'}</div>
+      <div class="slot-actions">
+        <button class="btn secondary small" onclick="saveToSlot(${i})">現在の条件を保存</button>
+        ${s ? `<button class="btn secondary small" onclick="loadSlot(${i})">呼び出す</button><button class="btn ghost" onclick="clearSlot(${i})">削除</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+function saveToSlot(i){
+  if(savedSearches[i] && !confirm('この保存枠を上書きしますか？')) return;
+  savedSearches[i] = getCurrentSearchCondition();
+  localStorage.setItem('recipeApp_savedSearches', JSON.stringify(savedSearches));
+  renderSaveSlots();
+}
+function loadSlot(i){
+  if(!savedSearches[i]) return;
+  applySearchCondition(savedSearches[i]);
+}
+function clearSlot(i){
+  savedSearches[i] = null;
+  localStorage.setItem('recipeApp_savedSearches', JSON.stringify(savedSearches));
+  renderSaveSlots();
+}
+function renderSearchResults(){
+  const andWords = splitWords(document.getElementById('searchAnd').value);
+  const orWords = splitWords(document.getElementById('searchOr').value);
+  const notWords = splitWords(document.getElementById('searchNot').value);
+  const andTags = Object.entries(searchTagStates).filter(([,s])=>s==='and').map(([t])=>t);
+  const orTags = Object.entries(searchTagStates).filter(([,s])=>s==='or').map(([t])=>t);
+  const notTags = Object.entries(searchTagStates).filter(([,s])=>s==='not').map(([t])=>t);
+
+  const filtered = recipes.filter(r=>{
+    if(favFilter==='fav' && !r.favorite) return false;
+    if(favFilter==='nonfav' && r.favorite) return false;
+    if(andWords.some(w=>!recipeMatchesWord(r,w))) return false;
+    if(orWords.length && !orWords.some(w=>recipeMatchesWord(r,w))) return false;
+    if(notWords.some(w=>recipeMatchesWord(r,w))) return false;
+    const rtags = (r.tags||[]).map(t=>t.toLowerCase());
+    if(andTags.some(t=>!rtags.includes(t.toLowerCase()))) return false;
+    if(orTags.length && !orTags.some(t=>rtags.includes(t.toLowerCase()))) return false;
+    if(notTags.some(t=>rtags.includes(t.toLowerCase()))) return false;
+    return true;
+  });
+
+  const grid = document.getElementById('searchResultGrid');
+  if(!grid) return;
+  if(filtered.length===0){
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">条件に一致するレシピが見つかりません。</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(r => `
+    <div class="recipe-card" onclick="openDetail('${r.id}')">
+      <button class="fav-star ${r.favorite?'on':''}" onclick="event.stopPropagation(); quickToggleFav('${r.id}')">${r.favorite?'★':'☆'}</button>
+      <h3>${escapeHtml(r.title)}</h3>
+      <div class="meta">更新: ${formatJST(r.updatedAt)}</div>
+      <div class="chip-row">${(r.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
+    </div>
+  `).join('');
 }
 
 /* ---------- tag management page ---------- */
