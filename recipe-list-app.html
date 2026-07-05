@@ -374,7 +374,7 @@ async function exportData(){
     try{
       const file = new File([json], filename, {type:'application/json'});
       if(navigator.canShare({files:[file]})){
-        await navigator.share({files:[file], title:'レシピリストの書き出し', text:filename});
+        await navigator.share({files:[file]});
         return;
       }
     }catch(err){
