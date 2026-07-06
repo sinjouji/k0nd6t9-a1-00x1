@@ -75,6 +75,7 @@ section[hidden]{display:none;}
 }
 .btn:active{transform:translateY(1px);}
 .btn.secondary{background:var(--panel-2); color:var(--ink); border:1px solid var(--line);}
+.btn.secondary.active{background:var(--primary); color:#fff; border-color:var(--primary);}
 .btn.danger{background:var(--danger-soft); color:var(--danger); border:1px solid #E4C9C4;}
 .btn.small{padding:5px 10px; font-size:.78rem; border-radius:8px;}
 .btn.ghost{background:transparent; color:var(--primary); box-shadow:none; padding:4px 8px;}
@@ -96,6 +97,24 @@ section[hidden]{display:none;}
   max-height:120px; overflow-y:auto; border:1px dashed var(--line); border-radius:10px;
   padding:8px; background:var(--panel-2);
 }
+.scroll-limited-lg{
+  max-height:320px; overflow-y:auto; border:1px dashed var(--line); border-radius:10px;
+  padding:10px; background:var(--panel-2);
+}
+.tag-manage-chip{
+  display:inline-flex; align-items:center; gap:5px;
+  background:var(--tag-bg); color:var(--tag-fg); font-size:.8rem; font-weight:500;
+  padding:6px 6px 6px 12px; border-radius:999px; border:1px solid transparent;
+}
+.tag-manage-chip .count{opacity:.7; font-size:.72rem;}
+.tag-manage-chip .edit-btn{
+  background:rgba(255,255,255,.6); border:none; border-radius:50%; width:20px; height:20px;
+  font-size:.7rem; line-height:1; color:var(--tag-fg); cursor:pointer;
+}
+.tag-manage-chip.armed{ background:var(--danger-soft); color:var(--danger); border-color:#E4C9C4; }
+.tag-manage-chip.bulk-selected{ background:var(--primary-soft); color:var(--primary-dark); border-color:var(--primary); }
+.recipe-card.bulk-selected{ border-color:var(--primary); box-shadow:0 0 0 2px var(--primary-soft); }
+.bulk-check{ position:absolute; top:10px; left:10px; width:18px; height:18px; }
 
 .tag-chip{
   display:inline-flex; align-items:center; gap:4px;
@@ -136,6 +155,16 @@ section[hidden]{display:none;}
 .modal-foot{
   display:flex; justify-content:flex-end; gap:8px; padding:14px 18px; border-top:1px solid var(--line);
 }
+.modal-foot-split{ justify-content:space-between; }
+
+/* 詳細モーダルはサイズ固定：ヘッダー・フッターは常時表示、ボディのみスクロール */
+#detailOverlay .modal-box{
+  max-height:85vh; display:flex; flex-direction:column;
+}
+#detailOverlay .modal-body{
+  flex:1 1 auto; min-height:0; overflow-y:auto;
+}
+#detailOverlay .modal-head, #detailOverlay .modal-foot{ flex:0 0 auto; }
 
 .field{margin-bottom:16px;}
 .field label{display:block; font-size:.78rem; color:var(--sub); margin-bottom:6px; font-weight:500;}
@@ -347,6 +376,11 @@ section[hidden]{display:none;}
       <div class="save-slot-row" id="saveSlotRow"></div>
     </div>
 
+    <div class="toolbar">
+      <button class="btn secondary" id="bulkTagModeBtn" onclick="toggleBulkModeSearch()">まとめてタグ登録</button>
+      <button class="btn" id="bulkApplyFromSearchBtn" style="display:none;" onclick="openBulkTagPicker()">まとめて追加（<span id="bulkSearchCount">0</span>件選択中）</button>
+    </div>
+
     <div class="recipe-grid" id="searchResultGrid"></div>
   </section>
 
@@ -361,6 +395,12 @@ section[hidden]{display:none;}
   <section id="view-tags" hidden>
     <div class="toolbar">
       <input type="text" class="search-box" id="tagFilter" placeholder="タグを検索…" oninput="renderTagManage()">
+      <select id="tagSortSel" onchange="renderTagManage()" style="padding:9px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);font-size:.85rem;">
+        <option value="name-asc">名前順（あ→ん）</option>
+        <option value="name-desc">名前順（ん→あ）</option>
+        <option value="count-desc">使用数が多い順</option>
+        <option value="count-asc">使用数が少ない順</option>
+      </select>
     </div>
     <div class="field" style="max-width:340px;">
       <label>新しいタグを追加</label>
@@ -370,7 +410,12 @@ section[hidden]{display:none;}
         <button class="btn secondary" onclick="addNewTagFromManage()">追加</button>
       </div>
     </div>
-    <div id="tagManageList"></div>
+    <div class="toolbar">
+      <button class="btn secondary" id="bulkRecipeModeBtn" onclick="toggleBulkModeTags()">まとめてレシピ登録</button>
+      <button class="btn" id="bulkApplyFromTagsBtn" style="display:none;" onclick="openBulkRecipePicker()">まとめて追加（<span id="bulkTagsCount">0</span>件選択中）</button>
+    </div>
+    <div style="font-size:.72rem; color:var(--sub); margin:-6px 0 10px;">タップでタグ名（使用数）を表示。もう一度タップすると削除確認になります（✎で名前を変更）。</div>
+    <div class="chip-row" id="tagManageList"></div>
   </section>
 </main>
 
@@ -446,7 +491,7 @@ section[hidden]{display:none;}
       <button class="modal-close" onclick="closeDetail()">×</button>
     </div>
     <div class="modal-body" id="detailBody"></div>
-    <div class="modal-foot">
+    <div class="modal-foot modal-foot-split">
       <button class="btn danger" onclick="deleteRecipeFromDetail()">削除</button>
       <button class="btn secondary" onclick="editFromDetail()">編集</button>
     </div>
@@ -467,7 +512,7 @@ section[hidden]{display:none;}
       <div id="menuGroupsWrap"></div>
       <button class="btn secondary small" style="margin-top:6px;" onclick="addMenuGroup()">＋ グループ追加</button>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot modal-foot-split">
       <button class="btn danger" onclick="deleteMenuList()">リストを削除</button>
       <button class="btn secondary" onclick="closeMenuModal()">閉じる</button>
     </div>
@@ -489,6 +534,48 @@ section[hidden]{display:none;}
     </div>
     <div class="modal-foot">
       <button class="btn secondary" onclick="closeUnitsModal()">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="bulkTagPickerOverlay" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>タグをまとめて追加</h2>
+      <button class="modal-close" onclick="closeBulkTagPicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.8rem; color:var(--sub); margin-bottom:8px;">
+        選択中のレシピ <b id="bulkTagPickerRecipeCount">0</b>件に追加するタグを選んでください（複数選択可）。
+      </div>
+      <input type="text" id="bulkTagPickerSearch" placeholder="タグを検索…" oninput="renderBulkTagPickerList()"
+        style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);margin-bottom:10px;">
+      <div class="chip-row scroll-limited-lg" id="bulkTagPickerList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" onclick="closeBulkTagPicker()">キャンセル</button>
+      <button class="btn" onclick="applyBulkTagsToRecipes()">追加する</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="bulkRecipePickerOverlay" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2>レシピをまとめて選択</h2>
+      <button class="modal-close" onclick="closeBulkRecipePicker()">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:.8rem; color:var(--sub); margin-bottom:8px;">
+        選択中のタグ <b id="bulkRecipePickerTagCount">0</b>件を追加するレシピを選んでください（複数選択可）。
+      </div>
+      <input type="text" id="bulkRecipePickerSearch" placeholder="レシピ名で検索…" oninput="renderBulkRecipePickerList()"
+        style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-2);margin-bottom:10px;">
+      <div class="scroll-limited-lg" id="bulkRecipePickerList"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn secondary" onclick="closeBulkRecipePicker()">キャンセル</button>
+      <button class="btn" onclick="applyBulkRecipesToTags()">追加する</button>
     </div>
   </div>
 </div>
@@ -626,7 +713,7 @@ function renderList(){
       <button class="fav-star ${r.favorite?'on':''}" onclick="event.stopPropagation(); quickToggleFav('${r.id}')">${r.favorite?'★':'☆'}</button>
       <h3>${escapeHtml(r.title)}</h3>
       <div class="meta">更新: ${formatJST(r.updatedAt)}</div>
-      <div class="chip-row">${(r.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
+      <div class="chip-row">${sortTagsJa(r.tags).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
     </div>
   `).join('');
 }
@@ -639,6 +726,7 @@ function quickToggleFav(id){
 function escapeHtml(s){
   return String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
+function sortTagsJa(arr){ return [...(arr||[])].sort((a,b)=>a.localeCompare(b,'ja')); }
 
 /* ---------- detail view ---------- */
 let detailId = null;
@@ -672,7 +760,7 @@ function openDetail(id){
     <div style="font-size:.75rem;color:var(--sub);margin-bottom:10px;">
       登録日: ${formatJST(r.createdAt)} ／ 最終更新: ${formatJST(r.updatedAt)} ${r.favorite? ' ／ ★お気に入り':''} ${r.servings? ` ／ ${escapeHtml(r.servings)}人分`:''}
     </div>
-    <div class="chip-row" style="margin-bottom:14px;">${(r.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('') || '<span style="color:var(--sub);font-size:.8rem;">タグなし</span>'}</div>
+    <div class="chip-row" style="margin-bottom:14px;">${sortTagsJa(r.tags).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('') || '<span style="color:var(--sub);font-size:.8rem;">タグなし</span>'}</div>
     <div class="field"><label>材料</label>${groupsHtml || '<div style="color:var(--sub);font-size:.85rem;">未入力</div>'}</div>
     <div class="field"><label>カロリー（目安）</label><div style="font-size:.85rem;color:var(--sub);background:var(--panel-2);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;line-height:1.6;">${calorieHtml}</div></div>
     <div class="field"><label>作り方</label>${stepsHtml || '<div style="color:var(--sub);font-size:.85rem;">未入力</div>'}</div>
@@ -816,6 +904,9 @@ function addIngredientGroup(){
 }
 function removeIngredientGroup(gi){
   if(curGroups.length<=1){ alert('少なくとも1つのグループが必要です。'); return; }
+  const g = curGroups[gi];
+  const hasContent = g.items.some(it=>it.name.trim()||it.amount.trim());
+  if(hasContent && !confirm(`「${g.group.trim()||'グループなし'}」内の材料ごと削除しますか？`)) return;
   curGroups.splice(gi,1);
   renderIngredients(); renderHelperDock(); renderCalorieEstimate();
 }
@@ -1007,9 +1098,21 @@ function renderUnitsList(){
       <input type="number" step="any" value="${u.grams==null?'':u.grams}" placeholder="g/単位(任意)"
         style="width:120px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--panel-2);"
         oninput="updateUnitGrams(${i}, this.value)">
+      <button class="step-move-btn" onclick="moveUnitUp(${i})" ${i===0?'disabled':''}>↑</button>
+      <button class="step-move-btn" onclick="moveUnitDown(${i})" ${i===unitDefs.length-1?'disabled':''}>↓</button>
       <button class="btn ghost" style="color:var(--danger);" onclick="deleteUnitDef(${i})">削除</button>
     </div>
   `).join('');
+}
+function moveUnitUp(i){
+  if(i<=0) return;
+  [unitDefs[i-1], unitDefs[i]] = [unitDefs[i], unitDefs[i-1]];
+  saveUnits(); renderUnitsList(); renderHelperDock();
+}
+function moveUnitDown(i){
+  if(i>=unitDefs.length-1) return;
+  [unitDefs[i+1], unitDefs[i]] = [unitDefs[i], unitDefs[i+1]];
+  saveUnits(); renderUnitsList(); renderHelperDock();
 }
 function updateUnitLabel(i, val){ unitDefs[i].label = val; saveUnits(); renderHelperDock(); }
 function updateUnitGrams(i, val){ unitDefs[i].grams = (val===''||val==null) ? null : parseFloat(val); saveUnits(); renderCalorieEstimate(); }
@@ -1147,10 +1250,23 @@ function renderMenuList(){
     return;
   }
   grid.innerHTML = mealLists.map(m=>{
-    const total = (m.groups||[]).reduce((s,g)=>s+(g.recipeIds||[]).length,0);
-    return `<div class="recipe-card" onclick="openMenuModal('${m.id}')">
-      <h3>${escapeHtml(m.name||'(名称未設定)')}</h3>
-      <div class="meta">${(m.groups||[]).length}グループ ／ レシピ${total}件</div>
+    const groupsHtml = (m.groups||[]).map(g=>{
+      const chips = (g.recipeIds||[]).map(rid=>{
+        const r = recipes.find(x=>x.id===rid);
+        if(r){
+          return `<span class="tag-chip" style="cursor:pointer;" onclick="event.stopPropagation(); openDetail('${rid}')">${escapeHtml(r.title)}</span>`;
+        }
+        return `<span class="tag-chip" style="color:var(--sub);">(削除済み)</span>`;
+      }).join('') || '<span style="color:var(--sub);font-size:.78rem;">レシピなし</span>';
+      return `<div style="margin-bottom:8px;">
+        ${g.name ? `<div style="font-weight:600;font-size:.78rem;color:var(--primary-dark);margin-bottom:4px;">${escapeHtml(g.name)}</div>` : ''}
+        <div class="chip-row">${chips}</div>
+      </div>`;
+    }).join('') || '<div style="color:var(--sub);font-size:.8rem;">グループがありません</div>';
+    return `<div class="recipe-card" style="cursor:default;">
+      <button class="btn secondary small" style="position:absolute; top:10px; right:10px;" onclick="openMenuModal('${m.id}')">編集</button>
+      <h3 style="margin-right:56px;">${escapeHtml(m.name||'(名称未設定)')}</h3>
+      ${groupsHtml}
     </div>`;
   }).join('');
 }
@@ -1188,6 +1304,8 @@ function addMenuGroup(){
 }
 function removeMenuGroup(gi){
   const m = mealLists.find(x=>x.id===curMenuId); if(!m) return;
+  const g = m.groups[gi];
+  if(g.recipeIds.length>0 && !confirm(`「${g.name.trim()||'グループなし'}」内のレシピごと削除しますか？`)) return;
   m.groups.splice(gi,1);
   if(m.groups.length===0) m.groups.push({name:'', recipeIds:[]});
   saveMealLists(); renderMenuGroups();
@@ -1420,20 +1538,43 @@ function renderSearchResults(){
   if(!grid) return;
   if(filtered.length===0){
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">条件に一致するレシピが見つかりません。</div>`;
+    updateBulkSearchUI();
     return;
   }
-  grid.innerHTML = filtered.map(r => `
+  grid.innerHTML = filtered.map(r => {
+    if(bulkModeSearch){
+      const checked = bulkSelectedRecipeIds.has(r.id);
+      return `
+      <div class="recipe-card ${checked?'bulk-selected':''}" onclick="toggleRecipeSelection('${r.id}')">
+        <input type="checkbox" class="bulk-check" ${checked?'checked':''} onclick="event.stopPropagation(); toggleRecipeSelection('${r.id}')">
+        <h3 style="margin-left:24px;">${escapeHtml(r.title)}</h3>
+        <div class="meta">更新: ${formatJST(r.updatedAt)}</div>
+        <div class="chip-row">${sortTagsJa(r.tags).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
+      </div>`;
+    }
+    return `
     <div class="recipe-card" onclick="openDetail('${r.id}')">
       <button class="fav-star ${r.favorite?'on':''}" onclick="event.stopPropagation(); quickToggleFav('${r.id}')">${r.favorite?'★':'☆'}</button>
       <h3>${escapeHtml(r.title)}</h3>
       <div class="meta">更新: ${formatJST(r.updatedAt)}</div>
-      <div class="chip-row">${(r.tags||[]).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
-    </div>
-  `).join('');
+      <div class="chip-row">${sortTagsJa(r.tags).map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
+    </div>`;
+  }).join('');
+  updateBulkSearchUI();
 }
 
 /* ---------- tag management page ---------- */
 function tagUsageCount(t){ return recipes.filter(r=>(r.tags||[]).some(x=>x.toLowerCase()===t.toLowerCase())).length; }
+let pendingDeleteTag = null;
+function sortTagsForManage(list){
+  const sortVal = document.getElementById('tagSortSel').value;
+  const arr = [...list];
+  if(sortVal==='name-asc') arr.sort((a,b)=>a.localeCompare(b,'ja'));
+  else if(sortVal==='name-desc') arr.sort((a,b)=>b.localeCompare(a,'ja'));
+  else if(sortVal==='count-desc') arr.sort((a,b)=>tagUsageCount(b)-tagUsageCount(a) || a.localeCompare(b,'ja'));
+  else if(sortVal==='count-asc') arr.sort((a,b)=>tagUsageCount(a)-tagUsageCount(b) || a.localeCompare(b,'ja'));
+  return arr;
+}
 function renderTagManage(){
   const q = document.getElementById('tagFilter').value.trim().toLowerCase();
   let list = [...tags];
@@ -1442,18 +1583,41 @@ function renderTagManage(){
     const starts = list.filter(t=>t.toLowerCase().startsWith(q) && t.toLowerCase()!==q);
     const partial = list.filter(t=>t.toLowerCase().includes(q) && !t.toLowerCase().startsWith(q));
     list = [...exact, ...starts, ...partial];
+  } else {
+    list = sortTagsForManage(list);
   }
   const el = document.getElementById('tagManageList');
   if(list.length===0){ el.innerHTML = `<div class="empty-state">タグがありません。</div>`; return; }
-  el.innerHTML = list.map(t=>`
-    <div style="display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid var(--line);">
-      <input type="text" value="${escapeHtml(t)}" style="flex:1; border:none; background:transparent; font-size:.9rem; border-bottom:1px dashed transparent; padding:4px;"
-        onfocus="this.style.borderBottomColor='var(--line)'"
-        onblur="this.style.borderBottomColor='transparent'; renameTagIfChanged('${t.replace(/'/g,"\\'")}', this.value)">
-      <span style="font-size:.72rem; color:var(--sub); white-space:nowrap;">${tagUsageCount(t)}件で使用</span>
-      <button class="btn ghost" style="color:var(--danger);" onclick="deleteTag('${t.replace(/'/g,"\\'")}')">削除</button>
-    </div>
-  `).join('');
+  el.innerHTML = list.map(t=>{
+    const safe = t.replace(/'/g,"\\'");
+    const isBulkSelected = bulkModeTags && bulkSelectedTagNames.has(t);
+    const isArmed = !bulkModeTags && pendingDeleteTag===t;
+    const cls = isBulkSelected ? 'bulk-selected' : (isArmed ? 'armed' : '');
+    const label = isArmed ? `${escapeHtml(t)}（${tagUsageCount(t)}）：削除？` : `${escapeHtml(t)} <span class="count">（${tagUsageCount(t)}）</span>`;
+    const editBtn = bulkModeTags ? '' : `<button type="button" class="edit-btn" onclick="event.stopPropagation(); renameTagPrompt('${safe}')">✎</button>`;
+    return `<span class="tag-manage-chip ${cls}">
+      <span style="cursor:pointer;" onclick="handleTagChipTap('${safe}')">${label}</span>
+      ${editBtn}
+    </span>`;
+  }).join('');
+  updateBulkTagsUI();
+}
+function handleTagChipTap(t){
+  if(bulkModeTags){ toggleTagBulkSelection(t); return; }
+  if(pendingDeleteTag===t){
+    tags = tags.filter(x=>x!==t);
+    recipes.forEach(r=>{ r.tags = (r.tags||[]).filter(x=>x!==t); });
+    pendingDeleteTag = null;
+    saveAll(); renderTagManage(); renderList();
+  } else {
+    pendingDeleteTag = t;
+    renderTagManage();
+  }
+}
+function renameTagPrompt(oldName){
+  const val = prompt('新しいタグ名を入力してください', oldName);
+  if(val===null) return;
+  renameTagIfChanged(oldName, val);
 }
 function addNewTagFromManage(){
   const input = document.getElementById('newTagInput');
@@ -1464,26 +1628,160 @@ function addNewTagFromManage(){
 }
 function renameTagIfChanged(oldName, newVal){
   const val = newVal.trim();
-  if(!val || val===oldName) { renderTagManage(); return; }
+  if(!val || val===oldName) return;
   if(tags.some(t=>t.toLowerCase()===val.toLowerCase() && t.toLowerCase()!==oldName.toLowerCase())){
-    alert('同じ名前のタグが既に存在します。'); renderTagManage(); return;
+    alert('同じ名前のタグが既に存在します。'); return;
   }
   const idx = tags.findIndex(t=>t===oldName);
   if(idx>=0) tags[idx]=val;
   recipes.forEach(r=>{ r.tags = (r.tags||[]).map(t=> t===oldName ? val : t); });
-  saveAll(); renderTagManage();
+  saveAll(); renderTagManage(); renderList();
 }
-function deleteTag(t){
-  if(!confirm(`タグ「${t}」を削除しますか？（レシピからも削除されます）`)) return;
-  tags = tags.filter(x=>x!==t);
-  recipes.forEach(r=>{ r.tags = (r.tags||[]).filter(x=>x!==t); });
-  saveAll(); renderTagManage();
+
+/* ---------- まとめてタグ登録（一括割り当て） ---------- */
+let bulkModeSearch = false;
+let bulkSelectedRecipeIds = new Set();
+let bulkModeTags = false;
+let bulkSelectedTagNames = new Set();
+let bulkPickerTagSelections = new Set();
+let bulkPickerRecipeSelections = new Set();
+
+/* 検索ページ起点：レシピを選んでタグをまとめて追加 */
+function toggleBulkModeSearch(){
+  bulkModeSearch = !bulkModeSearch;
+  if(!bulkModeSearch) bulkSelectedRecipeIds.clear();
+  renderSearchResults();
+}
+function updateBulkSearchUI(){
+  const modeBtn = document.getElementById('bulkTagModeBtn');
+  const applyBtn = document.getElementById('bulkApplyFromSearchBtn');
+  if(modeBtn) modeBtn.classList.toggle('active', bulkModeSearch);
+  if(applyBtn){
+    applyBtn.style.display = (bulkModeSearch && bulkSelectedRecipeIds.size>0) ? '' : 'none';
+    const countEl = document.getElementById('bulkSearchCount');
+    if(countEl) countEl.textContent = bulkSelectedRecipeIds.size;
+  }
+}
+function toggleRecipeSelection(id){
+  if(bulkSelectedRecipeIds.has(id)) bulkSelectedRecipeIds.delete(id); else bulkSelectedRecipeIds.add(id);
+  renderSearchResults();
+}
+function openBulkTagPicker(){
+  if(bulkSelectedRecipeIds.size===0) return;
+  bulkPickerTagSelections = new Set();
+  document.getElementById('bulkTagPickerRecipeCount').textContent = bulkSelectedRecipeIds.size;
+  document.getElementById('bulkTagPickerSearch').value = '';
+  renderBulkTagPickerList();
+  document.getElementById('bulkTagPickerOverlay').hidden = false;
+}
+function closeBulkTagPicker(){ document.getElementById('bulkTagPickerOverlay').hidden = true; }
+function renderBulkTagPickerList(){
+  const q = document.getElementById('bulkTagPickerSearch').value.trim().toLowerCase();
+  const list = document.getElementById('bulkTagPickerList');
+  const sorted = sortTagsJa(tags);
+  const filtered = q ? sorted.filter(t=>t.toLowerCase().includes(q)) : sorted;
+  if(filtered.length===0){ list.innerHTML = '<span style="color:var(--sub);font-size:.8rem;">タグがありません</span>'; return; }
+  list.innerHTML = filtered.map(t=>{
+    const sel = bulkPickerTagSelections.has(t);
+    const safe = t.replace(/'/g,"\\'");
+    return `<button type="button" class="tag-filter-chip ${sel?'state-and':''}" onclick="toggleBulkPickerTag('${safe}')">${escapeHtml(t)}${sel?' <b>✓</b>':''}</button>`;
+  }).join('');
+}
+function toggleBulkPickerTag(t){
+  if(bulkPickerTagSelections.has(t)) bulkPickerTagSelections.delete(t); else bulkPickerTagSelections.add(t);
+  renderBulkTagPickerList();
+}
+function applyBulkTagsToRecipes(){
+  if(bulkPickerTagSelections.size===0){ alert('追加するタグを選択してください。'); return; }
+  let count = 0;
+  bulkSelectedRecipeIds.forEach(id=>{
+    const r = recipes.find(x=>x.id===id); if(!r) return;
+    r.tags = r.tags || [];
+    bulkPickerTagSelections.forEach(t=>{
+      if(!r.tags.some(x=>x.toLowerCase()===t.toLowerCase())) r.tags.push(t);
+    });
+    r.updatedAt = nowJSTISO();
+    count++;
+  });
+  saveAll();
+  closeBulkTagPicker();
+  bulkModeSearch = false; bulkSelectedRecipeIds.clear();
+  renderSearchResults(); renderList();
+  alert(`${count}件のレシピにタグを追加しました。`);
+}
+
+/* タグページ起点：タグを選んでレシピをまとめて選択・追加 */
+function toggleBulkModeTags(){
+  bulkModeTags = !bulkModeTags;
+  if(!bulkModeTags) bulkSelectedTagNames.clear();
+  renderTagManage();
+}
+function updateBulkTagsUI(){
+  const modeBtn = document.getElementById('bulkRecipeModeBtn');
+  const applyBtn = document.getElementById('bulkApplyFromTagsBtn');
+  if(modeBtn) modeBtn.classList.toggle('active', bulkModeTags);
+  if(applyBtn){
+    applyBtn.style.display = (bulkModeTags && bulkSelectedTagNames.size>0) ? '' : 'none';
+    const countEl = document.getElementById('bulkTagsCount');
+    if(countEl) countEl.textContent = bulkSelectedTagNames.size;
+  }
+}
+function toggleTagBulkSelection(t){
+  if(bulkSelectedTagNames.has(t)) bulkSelectedTagNames.delete(t); else bulkSelectedTagNames.add(t);
+  renderTagManage();
+}
+function openBulkRecipePicker(){
+  if(bulkSelectedTagNames.size===0) return;
+  bulkPickerRecipeSelections = new Set();
+  document.getElementById('bulkRecipePickerTagCount').textContent = bulkSelectedTagNames.size;
+  document.getElementById('bulkRecipePickerSearch').value = '';
+  renderBulkRecipePickerList();
+  document.getElementById('bulkRecipePickerOverlay').hidden = false;
+}
+function closeBulkRecipePicker(){ document.getElementById('bulkRecipePickerOverlay').hidden = true; }
+function renderBulkRecipePickerList(){
+  const q = document.getElementById('bulkRecipePickerSearch').value.trim().toLowerCase();
+  const list = document.getElementById('bulkRecipePickerList');
+  const filtered = q ? recipes.filter(r=>r.title.toLowerCase().includes(q)) : recipes;
+  if(filtered.length===0){ list.innerHTML = `<div class="empty-state">レシピが見つかりません。</div>`; return; }
+  list.innerHTML = filtered.map(r=>{
+    const checked = bulkPickerRecipeSelections.has(r.id);
+    return `<label style="display:flex; align-items:center; gap:8px; padding:7px 4px; border-bottom:1px solid var(--line); font-size:.85rem;">
+      <input type="checkbox" ${checked?'checked':''} onchange="toggleBulkPickerRecipe('${r.id}')"> ${escapeHtml(r.title)}
+    </label>`;
+  }).join('');
+}
+function toggleBulkPickerRecipe(id){
+  if(bulkPickerRecipeSelections.has(id)) bulkPickerRecipeSelections.delete(id); else bulkPickerRecipeSelections.add(id);
+}
+function applyBulkRecipesToTags(){
+  if(bulkPickerRecipeSelections.size===0){ alert('レシピを選択してください。'); return; }
+  let count = 0;
+  bulkPickerRecipeSelections.forEach(id=>{
+    const r = recipes.find(x=>x.id===id); if(!r) return;
+    r.tags = r.tags || [];
+    bulkSelectedTagNames.forEach(t=>{
+      if(!r.tags.some(x=>x.toLowerCase()===t.toLowerCase())) r.tags.push(t);
+    });
+    r.updatedAt = nowJSTISO();
+    count++;
+  });
+  saveAll();
+  closeBulkRecipePicker();
+  bulkModeTags = false; bulkSelectedTagNames.clear();
+  renderTagManage(); renderList();
+  alert(`${count}件のレシピにタグを追加しました。`);
 }
 
 /* ---------- init ---------- */
 document.addEventListener('click', (e)=>{
   const wrap = document.getElementById('tagInputWrap');
   if(wrap && !wrap.contains(e.target)) hideTagSuggest();
+  const tagList = document.getElementById('tagManageList');
+  if(pendingDeleteTag && tagList && !tagList.contains(e.target)){
+    pendingDeleteTag = null;
+    renderTagManage();
+  }
 });
 window.addEventListener('resize', ()=>{ if(!document.getElementById('modalOverlay').hidden) renderIngredients(); });
 
